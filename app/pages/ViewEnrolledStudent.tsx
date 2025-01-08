@@ -82,7 +82,7 @@ const ViewAttendance = () => {
             <ScrollView>
                 <View className="px-4 py-6">
                     <Text className="text-2xl text-white font-semibold mb-6">
-                         Attendance Record - {className}
+                         Student Enrolled: {className}
                     </Text>
 
                     {isLoading ? (

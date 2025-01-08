@@ -11,7 +11,7 @@ const Bookmark = () => {
   const handleViewClasses = () => {
     // router.push('/pages/ViewAttendance')
     router.push({
-      pathname: '/pages/ViewAttendance',
+      pathname: '/pages/ViewEnrolledStudent',
       // params: { 
       //     // classId: "677138d30025b530a07e",  // Use the _id from classCollectionId
       //     classId: "677138d30025a8c56eb8",
@@ -25,12 +25,20 @@ const Bookmark = () => {
 
   }
 
+
   const handleGenerateCode = async () => {
     setIsGenerating(true)
     try {
-      console.log('Generate Code pressed')
+      // Redirect to CreateSession page with class information
+      router.push({
+        pathname: '/pages/CreateSession',
+        params: {
+          classId: classId,
+          className: className
+        }
+      })
     } catch (error) {
-      console.log('Error generating code:', error)
+      console.log('Error navigating to CreateSession:', error)
     } finally {
       setIsGenerating(false)
     }
@@ -46,13 +54,13 @@ const Bookmark = () => {
         {/* Button Container - Positioned at bottom */}
         <View className="mt-auto mb-6 gap-4">
           <CustomButton 
-            title='View Attendance' 
+            title='View Enrolled Students' 
             handlePress={handleViewClasses}
             containerStyle="bg-secondary"
           />
 
           <CustomButton 
-            title='Generate Code' 
+            title='Generate Attendance Code' 
             handlePress={handleGenerateCode}
             isLoading={isGenerating}
           />

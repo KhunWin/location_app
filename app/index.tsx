@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import {Redirect, router} from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { images } from '../constants';
+// import { images } from '../../constants';
 import "../global.css";
 import React from 'react';
 import CustomButton from '@/components/CustomButton';
@@ -20,7 +21,7 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={{ height: '100%'}}>     
         <View className='w-full justify-center items-center min-h-[85vh] px-4'>
           <Image
-            source={images.logo1}
+            source={images.logo}
             className='w-[130px] h-[84px]'
             resizeMode='contain' 
             />

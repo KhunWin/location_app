@@ -51,3 +51,15 @@ Join our community of developers creating universal apps.
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
 # location_app
+
+
+##github commit
+
+git add .
+git commit -m "text"
+git push -u origin main
+
+##three extra features
+1. Group limitataion..if the group is full, can't be enrolled
+2. Auto check-out if they are out of parameter.
+3. Show over-time if they stay over longer than the time limit.

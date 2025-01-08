@@ -18,7 +18,6 @@ This collection stores information about all users (students and teachers). Sinc
   "_id": "<unique_user_id>",
   "username": "john_doe",
   "email": "johndoe@example.com",
-  "avatar": "https://example.com/avatar.png",
   "role": "student",        // Can be "student" or "teacher"
   "joined_classes": [       // Only applicable for students
     {
@@ -42,6 +41,7 @@ This collection stores information about all users (students and teachers). Sinc
 ### **2. `classes` Collection**
 This collection stores all the class-related information, including the teacher who created it, the students who joined, and the attendance records.
 
+classCollectionId
 #### **Document Structure**
 ```json
 {
@@ -56,7 +56,7 @@ This collection stores all the class-related information, including the teacher 
     }
   ],
   "attendance_days": [          // Tracks attendance for each day
-    {
+    { "session_title": "Section 1", //newly added attribute
       "date": "2024-12-28",     // Date of attendance
       "attendance_code": "ABC123", // Code generated for the day
       "location": {                 //longitude for attendance code
@@ -235,3 +235,327 @@ userCollectionId
     }
   ],
   
+
+
+
+
+const Home = () => {
+  const [className, setClassName] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [classes, setClasses] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [currentUser, setCurrentUser] = useState(null)
+  const [enrollmentStatus, setEnrollmentStatus] = useState({})
+
+  const screenWidth = Dimensions.get('window').width
+  const itemWidth = (screenWidth - 48) / 2
+
+  useEffect(() => {
+    loadUserAndClasses()
+  }, [])
+
+  const handleClassPress = (classItem) => {
+    // Navigate to class details page
+    router.push({
+      pathname: `/bookmark`,
+      params: { className: classItem.class_name,
+                    classId: classItem.class_id}
+    });
+  };
+const loadUserAndClasses = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Get current user and their role
+      const user = await getCurrentUser();
+      console.log('Current user:', user);
+      setCurrentUser(user);
+
+      // Get classes
+      const userClasses = await getUserClasses();
+      setClasses(userClasses);
+
+      // Check enrollment status if user is a student
+      if (user && user.role === 'student') {
+        const statusObj = {};
+        
+        // Get enrollment status from user's joined_classes
+        if (user.joined_classes && Array.isArray(user.joined_classes)) {
+          user.joined_classes.forEach(classData => {
+            try {
+              let parsedClass;
+              if (typeof classData === 'string') {
+                // Handle nested JSON string
+                parsedClass = JSON.parse(classData);
+                // Check if it's an array and take the first item
+                if (Array.isArray(parsedClass)) {
+                  parsedClass = parsedClass[0];
+                }
+              } else {
+                parsedClass = classData;
+              }
+              
+              console.log('Parsed class data:', parsedClass);
+              if (parsedClass && parsedClass.class_id) {
+                statusObj[parsedClass.class_id] = parsedClass.status;
+              }
+            } catch (error) {
+              console.log('Error parsing joined class:', error);
+              console.log('Problematic class data:', classData);
+            }
+          });
+        }
+        
+        console.log('Final enrollment status:', statusObj);
+        setEnrollmentStatus(statusObj);
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+      Alert.alert('Error', 'Failed to load data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+const handleEnroll = async (classItem) => {
+    console.log('Starting handleEnroll for:', classItem);
+    
+    if (!currentUser) {
+        console.log('No current user found');
+        Alert.alert('Error', 'Please log in first');
+        return;
+    }
+
+    try {
+        console.log('Current user:', currentUser);
+        
+        // Call the enrollInClass function
+        const result = await enrollInClass(classItem, currentUser);
+        console.log('Enrollment result:', result);
+        
+        // Update local enrollment status
+        setEnrollmentStatus(prev => {
+            const newStatus = {
+                ...prev,
+                [classItem.class_id]: 'pending'
+            };
+            console.log('Updated local enrollment status:', newStatus);
+            return newStatus;
+        });
+
+        // Update current user state with new joined_classes
+        setCurrentUser(result.userUpdate);
+
+        Alert.alert('Success', 'Enrollment request sent');
+        
+        // Reload data
+        console.log('Reloading data...');
+        await loadUserAndClasses();
+        
+    } catch (error) {
+        console.error('Error in handleEnroll:', error);
+        Alert.alert('Error', error.message || 'Failed to enroll in class');
+    }
+};
+
+  const handleCreateClass = async () => {
+    console.log('Starting handleCreateClass');
+    if (!className.trim()) {
+      Alert.alert('Error', 'Please enter a class name');
+      return;
+    }
+  
+    try {
+      setIsSubmitting(true);
+      console.log('Creating class with name:', className);
+      
+      const newClass = await createClass(className);
+      console.log('Class created:', newClass);
+      
+      setClassName('');
+      setShowForm(false);
+      
+      console.log('Reloading classes...');
+      await loadUserAndClasses();
+      
+      Alert.alert('Success', 'Class created successfully');
+    } catch (error) {
+      console.error('Error creating class:', error);
+      Alert.alert('Error', 'Failed to create class');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+return (
+    <SafeAreaView className="bg-primary h-full">
+      <ScrollView>
+        <View className='px-4 my-6'>
+          <View className="flex-row justify-between items-center mb-8">
+            <Text className='text-2xl text-white font-semibold'>My Classes</Text>
+            {currentUser?.role === 'teacher' && (
+              <TouchableOpacity 
+                onPress={() => setShowForm(!showForm)}
+                className="bg-secondary px-4 py-2 rounded-lg"
+              >
+                <Text className="text-white">
+                  {showForm ? 'Cancel' : 'Create Class'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {showForm && currentUser?.role === 'teacher' && (
+            <View className="mb-8">
+              <FormField 
+                title="Class Name"
+                value={className}
+                handleChangeText={setClassName}
+                placeholder="Enter class name"
+              />
+              <CustomButton 
+                title='Create Class' 
+                handlePress={handleCreateClass}
+                containerStyle="mt-4" 
+                isLoading={isSubmitting}
+              />
+            </View>
+          )}
+
+          {isLoading ? (
+            <Text className="text-white text-center">Loading classes...</Text>
+          ) : (
+            <View className="flex-row flex-wrap gap-2 justify-between">
+              {classes.map(renderClassItem)}
+            </View>
+          )}
+
+          {!isLoading && classes.length === 0 && (
+            <Text className="text-white text-center">
+              {currentUser?.role === 'teacher' 
+                ? 'No classes created yet. Create your first class!'
+                : 'No classes available yet.'}
+            </Text>
+          )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  )
+}
+
+
+export const enrollInClass = async (classItem, currentUser) => {
+    console.log('Starting enrollInClass with:', { classItem, currentUser });
+    
+    try {
+        if (!databases) {
+            console.error('Databases instance is undefined');
+            throw new Error('Database configuration error');
+        }
+
+        // 1. Update Class Document
+        console.log('Fetching class document...');
+        const classes = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.classCollectionId,
+            [Query.equal('class_id', classItem.class_id)]
+        );
+        console.log('Found classes:', classes);
+
+        if (!classes.documents.length) {
+            throw Error('Class not found');
+        }
+
+        const classDoc = classes.documents[0];
+        console.log('Class document:', classDoc);
+
+        // Handle students array in class document
+        let studentsArray = classDoc.students || [];
+        console.log('Current students array in class:', studentsArray);
+
+        // Check for existing enrollment in class
+        const isEnrolledInClass = studentsArray.some(student => {
+            const parsedStudent = safeJsonParse(student);
+            return parsedStudent.student_id === currentUser.$id;
+        });
+
+        if (isEnrolledInClass) {
+            throw Error('Already enrolled in this class');
+        }
+
+        // Create new student entry for class
+        const newStudentInClass = {
+            student_id: currentUser.$id,
+            status: "pending",
+            joined_date: new Date().toISOString()
+        };
+        console.log('New student entry for class:', newStudentInClass);
+
+        // Update class document
+        console.log('Updating class document...');
+        const updatedClass = await databases.updateDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.classCollectionId,
+            classDoc.$id,
+            {
+                students: [...studentsArray, JSON.stringify(newStudentInClass)]
+            }
+        );
+        console.log('Updated class document:', updatedClass);
+
+        // 2. Update User Document
+        console.log('Updating user document...');
+        
+        // Get current joined_classes array
+        let userJoinedClasses = currentUser.joined_classes || [];
+        console.log('Current joined_classes:', userJoinedClasses);
+
+        // Parse existing joined_classes if it's a string
+        if (typeof userJoinedClasses === 'string') {
+            try {
+                userJoinedClasses = JSON.parse(userJoinedClasses);
+            } catch (e) {
+                console.log('Error parsing joined_classes, initializing as empty array');
+                userJoinedClasses = [];
+            }
+        }
+
+        // Ensure it's an array
+        if (!Array.isArray(userJoinedClasses)) {
+            userJoinedClasses = [];
+        }
+
+        // Create new class entry for user
+        const newClassEntry = {
+            class_id: classItem.class_id,
+            status: "pending"
+        };
+
+        // Add new class to user's joined_classes
+        userJoinedClasses.push(newClassEntry);
+        console.log('Updated joined_classes array:', userJoinedClasses);
+
+        // Update user document
+        const updatedUser = await databases.updateDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.userCollectionId,
+            currentUser.$id,
+            {
+                joined_classes: [JSON.stringify(userJoinedClasses)]
+            }
+        );
+        console.log('Updated user document:', updatedUser);
+
+        return {
+            classUpdate: updatedClass,
+            userUpdate: updatedUser
+        };
+    } catch (error) {
+        console.error('Error in enrollInClass:', error);
+        console.error('Error stack:', error.stack);
+        throw error;
+    }
+};
+
+after the button enroll is clicked, it still showed as enroll rather than pending. 
+
+
