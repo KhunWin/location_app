@@ -1,6 +1,6 @@
 import SignIn from '@/app/(auth)/sign-in';
 import * as Location from 'expo-location';  // Add this import
-import { Client, Account, Avatars, Databases, ID, Query } from 'react-native-appwrite';
+import { Client, Account, Avatars, Databases, ID, Query, AppwriteException } from 'react-native-appwrite';
 
 
 // import { Client, Account, ID, Avatars, Databases } from 'appwrite';
@@ -250,7 +250,7 @@ export const getCurrentUser = async () => {
             [Query.equal('accountId', currentAccount.$id)]
         );
 
-        console.log('Current user query result:', currentUser);
+        // console.log('Current user query result:', currentUser);
 
         if (!currentUser || !currentUser.documents.length) {
             console.log('No user document found');
@@ -600,8 +600,8 @@ export const createClassSession = async (classId: string, sessionTitle: string) 
 
 export const getClassSessions = async (classId: string) => {
     try {
-        console.log('\n=== Starting getClassSessions ===');
-        console.log('Input classId:', classId);
+        // console.log('\n=== Starting getClassSessions ===');
+        // console.log('Input classId:', classId);
 
         const classes = await databases.listDocuments(
             appwriteConfig.databaseId,
@@ -835,16 +835,16 @@ const safeJsonParse = (str) => {
 // };
 
 export const enrollInClass = async (classItem, currentUser) => {
-    console.log('Starting enrollInClass with:', { classItem, currentUser });
+    // console.log('Starting enrollInClass with:', { classItem, currentUser });
     
     try {
         if (!databases) {
-            console.error('Databases instance is undefined');
+            // console.error('Databases instance is undefined');
             throw new Error('Database configuration error');
         }
 
         // 1. Update Class Document
-        console.log('Fetching class document...');
+        // console.log('Fetching class document...');
         const classes = await databases.listDocuments(
             appwriteConfig.databaseId,
             appwriteConfig.classCollectionId,
@@ -888,7 +888,7 @@ export const enrollInClass = async (classItem, currentUser) => {
         );
 
         // 2. Update User Document
-        console.log('Updating user document...');
+        // console.log('Updating user document...');
         
         // Initialize joined_classes array
         let userJoinedClasses = [];
@@ -925,7 +925,7 @@ export const enrollInClass = async (classItem, currentUser) => {
             userJoinedClasses.push(newClassEntry);
         }
 
-        console.log('Final joined_classes array:', userJoinedClasses);
+        // console.log('Final joined_classes array:', userJoinedClasses);
 
         // Update user document - Keep as array but stringify each element
         const updatedUser = await databases.updateDocument(
@@ -948,3 +948,393 @@ export const enrollInClass = async (classItem, currentUser) => {
     }
 };
 
+
+
+// // Calculate distance between two points using Haversine formula
+export const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    console.log('Calculating distance between points:', {
+        student: { lat: lat1, lon: lon1 },
+        class: { lat: lat2, lon: lon2 }
+    });
+
+    const R = 6371e3; // Earth's radius in meters
+    const φ1 = lat1 * Math.PI/180;
+    const φ2 = lat2 * Math.PI/180;
+    const Δφ = (lat2-lat1) * Math.PI/180;
+    const Δλ = (lon2-lon1) * Math.PI/180;
+
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c;
+
+    console.log('Calculated distance:', distance, 'meters');
+    return distance;
+};
+
+
+// Helper function to parse joined_classes
+export const parseJoinedClasses = (classesArray) => {
+    return classesArray.map(classStr => {
+        try {
+            return JSON.parse(classStr);
+        } catch (e) {
+            console.error('Error parsing class string:', classStr, e);
+            return null;
+        }
+    }).filter(item => item !== null);
+};
+
+///almost finding the error
+
+// // Add this function to inspect database documents
+// export const inspectClassCollection = async () => {
+//     try {
+//         console.log('Inspecting class collection...');
+        
+//         // List documents in the class collection
+//         const documents = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.classCollectionId,
+//             [
+//                 Query.limit(100) // Adjust limit as needed
+//             ]
+//         );
+
+//         console.log('Class Collection Structure:', {
+//             totalDocuments: documents.total,
+//             collectionId: appwriteConfig.classCollectionId,
+//         });
+
+//         // Print structure of first document to understand schema
+//         if (documents.documents.length > 0) {
+//             console.log('Example Document Structure:', {
+//                 keys: Object.keys(documents.documents[0]),
+//                 idField: documents.documents[0].$id, // Check what the ID field is actually called
+//                 fullDocument: documents.documents[0]
+//             });
+//         }
+
+//         // Print all document IDs for comparison
+//         console.log('Available Class IDs:', documents.documents.map(doc => ({
+//             class_id: doc.class_id,
+//             class_name: doc.class_name || 'Unnamed Class',
+//             created_by: doc.created_by || 'Unknown User',
+//             students: doc.students[0] || 'No students',
+//             attendace_days: doc.attendance_days[0] || 'No attendance days',
+
+//         })));
+
+//         return documents;
+//     } catch (error) {
+//         console.error('Error inspecting class collection:', error);
+//         throw error;
+//     }
+// };
+
+//only parsing the first student in the array
+// export const findAttendanceSession = async (classId, attendanceCode, studentId, currentUser) => {
+//     try {
+//         console.log('Finding attendance session with:', {
+//             classId,
+//             attendanceCode,
+//             studentId
+//         });
+
+//         // List documents with a query filter for class_id
+//         const classDocuments = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.classCollectionId,
+//             [
+//                 Query.equal('class_id', classId)
+//             ]
+//         );
+
+//         console.log('Found class documents:', classDocuments);
+
+//         if (!classDocuments.documents || classDocuments.documents.length === 0) {
+//             throw new Error('Class not found');
+//         }
+
+//         const classDoc = classDocuments.documents[0];
+//         console.log('Retrieved class document:', classDoc);
+
+//         // Verify student enrollment
+//         let studentEnrollment;
+//         try {
+//             if (typeof classDoc.students[0] === 'string') {
+//                 studentEnrollment = JSON.parse(classDoc.students[0]);
+//             } else {
+//                 studentEnrollment = classDoc.students[0];
+//             }
+//         } catch (error) {
+//             console.error('Error parsing student enrollment:', error);
+//             throw new Error('Invalid student enrollment data');
+//         }
+//         console.log('Student enrollment:', studentEnrollment);
+
+//         if (studentEnrollment.student_id !== studentId || studentEnrollment.status !== 'approved') {
+//             throw new Error('You are not enrolled in this class or your enrollment is pending');
+//         }
+
+//         // Parse attendance days
+//         let attendanceDays = [];
+//         try {
+//             if (Array.isArray(classDoc.attendance_days)) {
+//                 attendanceDays = classDoc.attendance_days.map(day => {
+//                     if (typeof day === 'string') {
+//                         return JSON.parse(day);
+//                     }
+//                     return day;
+//                 });
+//             }
+//         } catch (error) {
+//             console.error('Error parsing attendance days:', error);
+//             throw new Error('Invalid attendance days data');
+//         }
+
+//         console.log('Parsed attendance days:', attendanceDays);
+
+//         // Find active attendance session
+//         const session = attendanceDays.find(
+//             day => day.attendance_code === attendanceCode
+//         );
+
+//         console.log('Found attendance session:', session);
+
+//         if (!session) {
+//             throw new Error('Invalid attendance code');
+//         }
+
+//         return { classDoc, session };
+//     } catch (error) {
+//         console.error('Error finding attendance session:', error);
+//         throw error;
+//     }
+// };
+
+export const findAttendanceSession = async (classId, attendanceCode, studentId, currentUser) => {
+    try {
+        console.log('Finding attendance session with:', {
+            classId,
+            attendanceCode,
+            studentId
+        });
+
+        // List documents with a query filter for class_id
+        const classDocuments = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.classCollectionId,
+            [
+                Query.equal('class_id', classId)
+            ]
+        );
+
+        console.log('Found class documents:', classDocuments);
+
+        if (!classDocuments.documents || classDocuments.documents.length === 0) {
+            throw new Error('Class not found');
+        }
+
+        const classDoc = classDocuments.documents[0];
+        console.log('Retrieved class document:', classDoc);
+
+        // Parse and verify student enrollment
+        let enrollments = [];
+        try {
+            enrollments = classDoc.students.map(student => {
+                if (typeof student === 'string') {
+                    return JSON.parse(student);
+                }
+                return student;
+            });
+        } catch (error) {
+            console.error('Error parsing student enrollments:', error);
+            throw new Error('Invalid student enrollment data');
+        }
+        
+        console.log('All student enrollments:', enrollments);
+
+        // Find the specific student's enrollment
+        const studentEnrollment = enrollments.find(
+            enrollment => enrollment.student_id === studentId
+        );
+        
+        console.log('Found student enrollment:', studentEnrollment);
+
+        if (!studentEnrollment) {
+            throw new Error('You are not enrolled in this class');
+        }
+
+        if (studentEnrollment.status !== 'approved') {
+            throw new Error('Your enrollment is pending approval');
+        }
+
+        // Parse attendance days
+        let attendanceDays = [];
+        try {
+            if (Array.isArray(classDoc.attendance_days)) {
+                attendanceDays = classDoc.attendance_days.map(day => {
+                    if (typeof day === 'string') {
+                        return JSON.parse(day);
+                    }
+                    return day;
+                });
+            }
+        } catch (error) {
+            console.error('Error parsing attendance days:', error);
+            throw new Error('Invalid attendance days data');
+        }
+
+        console.log('Parsed attendance days:', attendanceDays);
+
+        // Find active attendance session
+        const session = attendanceDays.find(
+            day => day.attendance_code === attendanceCode
+        );
+
+        console.log('Found attendance session:', session);
+
+        if (!session) {
+            throw new Error('Invalid attendance code');
+        }
+
+        return { classDoc, session };
+    } catch (error) {
+        console.error('Error finding attendance session:', error);
+        throw error;
+    }
+};
+
+// Update updateAttendanceRecord function
+export const updateAttendanceRecord = async (classDoc, session, studentId, status) => {
+    try {
+        console.log('Updating attendance record:', {
+            classId: classDoc.class_id,
+            sessionCode: session.attendance_code,
+            studentId,
+            status
+        });
+
+        // Parse existing attendance days
+        let attendanceDays = classDoc.attendance_days.map(day => {
+            if (typeof day === 'string') {
+                return JSON.parse(day);
+            }
+            return day;
+        });
+
+        // Find the session to update
+        const sessionIndex = attendanceDays.findIndex(
+            day => day.attendance_code === session.attendance_code
+        );
+
+        if (sessionIndex === -1) {
+            throw new Error('Session not found');
+        }
+
+        // Create new record
+        const newRecord = {
+            student_id: studentId,
+            submission_time: new Date().toISOString(),
+            status: status
+        };
+
+        // Initialize or update records array
+        if (!attendanceDays[sessionIndex].records) {
+            attendanceDays[sessionIndex].records = [];
+        }
+
+        // Check for existing record
+        const existingRecordIndex = attendanceDays[sessionIndex].records.findIndex(
+            record => record.student_id === studentId
+        );
+
+        if (existingRecordIndex !== -1) {
+            // Update existing record
+            attendanceDays[sessionIndex].records[existingRecordIndex] = newRecord;
+        } else {
+            // Add new record
+            attendanceDays[sessionIndex].records.push(newRecord);
+        }
+
+        // Convert attendance days back to strings
+        const updatedAttendanceDays = attendanceDays.map(day => JSON.stringify(day));
+
+        // Update document
+        const result = await databases.updateDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.classCollectionId,
+            classDoc.$id,
+            {
+                attendance_days: updatedAttendanceDays
+            }
+        );
+
+        console.log('Database update result:', result);
+        return result;
+    } catch (error) {
+        console.error('Error updating attendance record:', error);
+        throw error;
+    }
+};
+
+// Update submitAttendance function
+export const submitAttendance = async (classId, attendanceCode, studentId, location, currentUser) => {
+    try {
+        console.log('Starting attendance submission:', {
+            classId,
+            attendanceCode,
+            studentId,
+            location
+        });
+
+        // Find attendance session and verify enrollment
+        const { classDoc, session } = await findAttendanceSession(
+            classId, 
+            attendanceCode, 
+            studentId,
+            currentUser
+        );
+
+        console.log('Found valid session:', {
+            sessionTitle: session.session_title,
+            date: session.date,
+            classLocation: session.location
+        });
+
+        // Calculate distance
+        const distance = calculateDistance(
+            location.latitude,
+            location.longitude,
+            session.location.latitude,
+            session.location.longitude
+        );
+
+        console.log('Distance calculation result:', {
+            distance,
+            withinLimit: distance <= 50
+        });
+
+        // Determine attendance status
+        const status = distance <= 50 ? 'present' : 'absent';
+
+        // Update attendance record
+        const result = await updateAttendanceRecord(classDoc, session, studentId, status);
+
+        return {
+            status,
+            distance
+        };
+    } catch (error) {
+        console.error('Error submitting attendance:', error);
+        throw error;
+    }
+};
+
+
+
+
+
+  

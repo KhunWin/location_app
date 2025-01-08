@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, Alert, Image, TouchableOpacity, Dimensions } from 'react-native'
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import FormField from '@/components/FormField'
@@ -152,10 +152,12 @@ const Home = () => {
 
   const screenWidth = Dimensions.get('window').width
   const itemWidth = (screenWidth - 48) / 2
+  const { refresh } = useLocalSearchParams();
 
   useEffect(() => {
     loadUserAndClasses()
-  }, [])
+  // }, [])
+}, [refresh]); // Add refresh to dependency array
 
   const handleClassPress = (classItem) => {
     // Navigate to class details page
@@ -166,277 +168,165 @@ const Home = () => {
     });
   };
 
-  // const loadUserAndClasses = async () => {
-  //   try {
-  //     setIsLoading(true)
+// const loadUserAndClasses = async () => {
+//   try {
+//       setIsLoading(true);
       
-  //     // Get current user and their role
-  //     const user = await getCurrentUser()
-  //     console.log('Current user:', user) // For debugging
-  //     setCurrentUser(user)
+//       // Get current user and their role
+//       const user = await getCurrentUser();
+//       // console.log('Current user:', user);
+//       setCurrentUser(user);
 
-  //     // Get classes
-  //     const userClasses = await getUserClasses()
-  //     setClasses(userClasses)
+//       // Get classes
+//       const userClasses = await getUserClasses();
+//       setClasses(userClasses);
 
-  //     // Check enrollment status if user is a student
-  //     if (user && user.role === 'student') {
-  //       const statusObj = {}
-        
-  //       // Get enrollment status from user's joined_classes
-  //       if (user.joined_classes && Array.isArray(user.joined_classes)) {
-  //         user.joined_classes.forEach(classData => {
-  //           try {
-  //             const parsedClass = typeof classData === 'string' 
-  //               ? JSON.parse(classData) 
-  //               : classData
-              
-  //             statusObj[parsedClass.class_id] = parsedClass.status
-  //           } catch (error) {
-  //             console.log('Error parsing joined class:', error)
-  //           }
-  //         })
-  //       }
-        
-  //       setEnrollmentStatus(statusObj)
-  //     }
-  //   } catch (error) {
-  //     console.error('Error loading data:', error)
-  //     Alert.alert('Error', 'Failed to load data')
-  //   } finally {
-  //     setIsLoading(false)
-  //   }
-  // }
+//       // Set enrollment status for students
+//       if (user && user.role === 'student') {
+//           const statusObj = {};
+          
+//           // Check each class's students array for the current user's status
+//           userClasses.forEach(classItem => {
+//               if (classItem.students && Array.isArray(classItem.students)) {
+//                   const studentEntry = classItem.students.find(studentStr => {
+//                       try {
+//                           const student = JSON.parse(studentStr);
+//                           return student.student_id === user.$id;
+//                       } catch (e) {
+//                           console.error('Error parsing student:', e);
+//                           return false;
+//                       }
+//                   });
 
-//   const loadUserAndClasses = async () => {
-//     try {
-//         setIsLoading(true);
-        
-//         // Get current user and their role
-//         const user = await getCurrentUser();
-//         console.log('Current user:', user);
-
-//         // Parse joined_classes
-//         let parsedJoinedClasses = [];
-//         if (user.joined_classes && Array.isArray(user.joined_classes)) {
-//             parsedJoinedClasses = user.joined_classes
-//                 .filter(entry => entry) // Remove empty entries
-//                 .map(entry => {
-//                     try {
-//                         return typeof entry === 'string' ? JSON.parse(entry) : entry;
-//                     } catch (e) {
-//                         console.error('Error parsing entry:', entry, e);
-//                         return null;
-//                     }
-//                 })
-//                 .filter(entry => entry !== null); // Remove failed parses
-//         }
-
-//         // Update user with parsed joined_classes
-//         user.joined_classes = parsedJoinedClasses;
-//         setCurrentUser(user);
-
-//         // Get classes
-//         const userClasses = await getUserClasses();
-//         setClasses(userClasses);
-
-//         // Set enrollment status
-//         if (user && user.role === 'student') {
-//             const statusObj = {};
-//             parsedJoinedClasses.forEach(classData => {
-//                 if (classData && classData.class_id) {
-//                     statusObj[classData.class_id] = classData.status;
-//                 }
-//             });
-//             console.log('Setting enrollment status:', statusObj);
-//             setEnrollmentStatus(statusObj);
-//         }
-//     } catch (error) {
-//         console.error('Error loading data:', error);
-//         Alert.alert('Error', 'Failed to load data');
-//     } finally {
-//         setIsLoading(false);
-//     }
+//                   if (studentEntry) {
+//                       try {
+//                           const parsedStudent = JSON.parse(studentEntry);
+//                           statusObj[classItem.class_id] = parsedStudent.status;
+//                       } catch (e) {
+//                           console.error('Error parsing student entry:', e);
+//                       }
+//                   }
+//               }
+//           });
+          
+//           // console.log('Setting enrollment status:', statusObj);
+//           setEnrollmentStatus(statusObj);
+//       }
+//   } catch (error) {
+//       console.error('Error loading data:', error);
+//       Alert.alert('Error', 'Failed to load data');
+//   } finally {
+//       setIsLoading(false);
+//   }
 // };
+
+
+//   const handleCreateClass = async () => {
+//     // console.log('Starting handleCreateClass');
+//     if (!className.trim()) {
+//       Alert.alert('Error', 'Please enter a class name');
+//       return;
+//     }
+  
+//     try {
+//       setIsSubmitting(true);
+//       console.log('Creating class with name:', className);
+      
+//       const newClass = await createClass(className);
+//       console.log('Class created:', newClass);
+      
+//       setClassName('');
+//       setShowForm(false);
+      
+//       console.log('Reloading classes...');
+//       await loadUserAndClasses();
+      
+//       Alert.alert('Success', 'Class created successfully');
+//     } catch (error) {
+//       console.error('Error creating class:', error);
+//       Alert.alert('Error', 'Failed to create class');
+//     } finally {
+//       setIsSubmitting(false);
+//     }
+//   };
 
 const loadUserAndClasses = async () => {
   try {
-      setIsLoading(true);
-      
-      // Get current user and their role
-      const user = await getCurrentUser();
-      console.log('Current user:', user);
-      setCurrentUser(user);
+    setIsLoading(true);
+    
+    // Get current user and their role
+    const user = await getCurrentUser();
+    setCurrentUser(user);
 
-      // Get classes
-      const userClasses = await getUserClasses();
-      setClasses(userClasses);
+    // Force fresh data fetch from server
+    const userClasses = await getUserClasses(true); // Add a parameter to force cache refresh
+    setClasses(userClasses);
 
-      // Set enrollment status for students
-      if (user && user.role === 'student') {
-          const statusObj = {};
-          
-          // Check each class's students array for the current user's status
-          userClasses.forEach(classItem => {
-              if (classItem.students && Array.isArray(classItem.students)) {
-                  const studentEntry = classItem.students.find(studentStr => {
-                      try {
-                          const student = JSON.parse(studentStr);
-                          return student.student_id === user.$id;
-                      } catch (e) {
-                          console.error('Error parsing student:', e);
-                          return false;
-                      }
-                  });
+    // Set enrollment status for students
+    if (user && user.role === 'student') {
+        const statusObj = {};
+        userClasses.forEach(classItem => {
+            if (classItem.students && Array.isArray(classItem.students)) {
+                const studentEntry = classItem.students.find(studentStr => {
+                    try {
+                        const student = JSON.parse(studentStr);
+                        return student.student_id === user.$id;
+                    } catch (e) {
+                        console.error('Error parsing student:', e);
+                        return false;
+                    }
+                });
 
-                  if (studentEntry) {
-                      try {
-                          const parsedStudent = JSON.parse(studentEntry);
-                          statusObj[classItem.class_id] = parsedStudent.status;
-                      } catch (e) {
-                          console.error('Error parsing student entry:', e);
-                      }
-                  }
-              }
-          });
-          
-          console.log('Setting enrollment status:', statusObj);
-          setEnrollmentStatus(statusObj);
-      }
+                if (studentEntry) {
+                    try {
+                        const parsedStudent = JSON.parse(studentEntry);
+                        statusObj[classItem.class_id] = parsedStudent.status;
+                    } catch (e) {
+                        console.error('Error parsing student entry:', e);
+                    }
+                }
+            }
+        });
+        setEnrollmentStatus(statusObj);
+    }
   } catch (error) {
-      console.error('Error loading data:', error);
-      Alert.alert('Error', 'Failed to load data');
+    console.error('Error loading data:', error);
+    Alert.alert('Error', 'Failed to load data');
   } finally {
-      setIsLoading(false);
+    setIsLoading(false);
+  }
+};
+
+// Make sure handleCreateClass also forces a refresh
+const handleCreateClass = async () => {
+  if (!className.trim()) {
+    Alert.alert('Error', 'Please enter a class name');
+    return;
+  }
+
+  try {
+    setIsSubmitting(true);
+    console.log('Creating class with name:', className);
+    
+    const newClass = await createClass(className);
+    console.log('Class created:', newClass);
+    
+    setClassName('');
+    setShowForm(false);
+    
+    // Force immediate refresh
+    await loadUserAndClasses();
+    
+    Alert.alert('Success', 'Class created successfully');
+  } catch (error) {
+    console.error('Error creating class:', error);
+    Alert.alert('Error', 'Failed to create class');
+  } finally {
+    setIsSubmitting(false);
   }
 };
 
 
-// const handleEnroll = async (classItem) => {
-  //   console.log('Starting handleEnroll for:', classItem);
-    
-  //   if (!currentUser) {
-  //     console.log('No current user found');
-  //     Alert.alert('Error', 'Please log in first');
-  //     return;
-  //   }
-
-  //   try {
-  //     console.log('Current user:', currentUser);
-      
-  //     // Call the enrollInClass function
-  //     await enrollInClass(classItem, currentUser);
-      
-  //     // Update local enrollment status
-  //     setEnrollmentStatus(prev => ({
-  //       ...prev,
-  //       [classItem.class_id]: 'pending'
-  //     }));
-
-  //     Alert.alert('Success', 'Enrollment request sent');
-      
-  //     // Reload data
-  //     console.log('Reloading data...');
-  //     await loadUserAndClasses();
-      
-  //   } catch (error) {
-  //     console.error('Error in handleEnroll:', error);
-  //     Alert.alert('Error', error.message || 'Failed to enroll in class');
-  //   }
-  // };
-
-  // const loadUserAndClasses = async () => {
-  //   try {
-  //     setIsLoading(true);
-      
-  //     // Get current user and their role
-  //     const user = await getCurrentUser();
-  //     console.log('Current user:', user);
-  //     setCurrentUser(user);
-
-  //     // Get classes
-  //     const userClasses = await getUserClasses();
-  //     setClasses(userClasses);
-
-  //     // Check enrollment status if user is a student
-  //     if (user && user.role === 'student') {
-  //       const statusObj = {};
-        
-  //       // Get enrollment status from user's joined_classes
-  //       if (user.joined_classes && Array.isArray(user.joined_classes)) {
-  //         user.joined_classes.forEach(classData => {
-  //           try {
-  //             let parsedClass;
-  //             if (typeof classData === 'string') {
-  //               // Handle nested JSON string
-  //               parsedClass = JSON.parse(classData);
-  //               // Check if it's an array and take the first item
-  //               if (Array.isArray(parsedClass)) {
-  //                 parsedClass = parsedClass[0];
-  //               }
-  //             } else {
-  //               parsedClass = classData;
-  //             }
-              
-  //             console.log('Parsed class data:', parsedClass);
-  //             if (parsedClass && parsedClass.class_id) {
-  //               statusObj[parsedClass.class_id] = parsedClass.status;
-  //             }
-  //           } catch (error) {
-  //             console.log('Error parsing joined class:', error);
-  //             console.log('Problematic class data:', classData);
-  //           }
-  //         });
-  //       }
-        
-  //       console.log('Final enrollment status:', statusObj);
-  //       setEnrollmentStatus(statusObj);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error loading data:', error);
-  //     Alert.alert('Error', 'Failed to load data');
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
-  // const handleEnroll = async (classItem) => {
-  //   console.log('Starting handleEnroll for:', classItem);
-  //   console.log('Current enrollment status:', enrollmentStatus);
-    
-  //   if (!currentUser) {
-  //     console.log('No current user found');
-  //     Alert.alert('Error', 'Please log in first');
-  //     return;
-  //   }
-
-  //   try {
-  //     console.log('Current user:', currentUser);
-      
-  //     // Call the enrollInClass function
-  //     await enrollInClass(classItem, currentUser);
-      
-  //     // Immediately update local enrollment status
-  //     setEnrollmentStatus(prev => {
-  //       const newStatus = {
-  //         ...prev,
-  //         [classItem.class_id]: 'pending'
-  //       };
-  //       console.log('Updated enrollment status:', newStatus);
-  //       return newStatus;
-  //     });
-
-  //     Alert.alert('Success', 'Enrollment request sent');
-      
-  //     // Reload data
-  //     console.log('Reloading data...');
-  //     await loadUserAndClasses();
-      
-  //   } catch (error) {
-  //     console.error('Error in handleEnroll:', error);
-  //     Alert.alert('Error', error.message || 'Failed to enroll in class');
-  //   }
-  // };
 
   const handleEnroll = async (classItem) => {
     console.log('Starting handleEnroll for:', classItem);
@@ -478,85 +368,10 @@ const loadUserAndClasses = async () => {
         Alert.alert('Error', error.message || 'Failed to enroll in class');
     }
 };
-
-  const handleCreateClass = async () => {
-    console.log('Starting handleCreateClass');
-    if (!className.trim()) {
-      Alert.alert('Error', 'Please enter a class name');
-      return;
-    }
-  
-    try {
-      setIsSubmitting(true);
-      console.log('Creating class with name:', className);
-      
-      const newClass = await createClass(className);
-      console.log('Class created:', newClass);
-      
-      setClassName('');
-      setShowForm(false);
-      
-      console.log('Reloading classes...');
-      await loadUserAndClasses();
-      
-      Alert.alert('Success', 'Class created successfully');
-    } catch (error) {
-      console.error('Error creating class:', error);
-      Alert.alert('Error', 'Failed to create class');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // const renderClassItem = (classItem) => {
-  //   const isStudent = currentUser?.role === 'student'
-  //   const status = enrollmentStatus[classItem.class_id]
-
-  //   return (
-  //     <TouchableOpacity 
-  //       key={classItem.$id}
-  //       onPress={() => handleClassPress(classItem)}
-  //       className="bg-primary rounded-lg overflow-hidden"
-  //       style={{ width: itemWidth }}
-  //     >
-  //       <Image 
-  //         source={images.class_icon}
-  //         style={{ width: '100%', height: itemWidth }}
-  //         resizeMode="cover"
-  //       />
-  //       <View className="p-2">
-  //         <View className="flex-row justify-between items-center">
-  //           <Text className="text-white text-lg flex-1">
-  //             {classItem.class_name}
-  //           </Text>
-  //           {isStudent && (
-  //             status === 'pending' ? (
-  //               <View className="bg-yellow-500 px-2 py-1 rounded">
-  //                 <Text className="text-white text-sm">Pending</Text>
-  //               </View>
-  //             ) : status === 'approved' ? (
-  //               <View className="bg-green-500 px-2 py-1 rounded">
-  //                 <Text className="text-white text-sm">Enrolled</Text>
-  //               </View>
-  //             ) : (
-  //               <TouchableOpacity 
-  //                 onPress={() => handleEnroll(classItem)}
-  //                 className="bg-blue-500 px-2 py-1 rounded"
-  //               >
-  //                 <Text className="text-white text-sm">Enroll</Text>
-  //               </TouchableOpacity>
-  //             )
-  //           )}
-  //         </View>
-  //       </View>
-  //     </TouchableOpacity>
-  //   )
-  // }
-
   const renderClassItem = (classItem) => {
     const isStudent = currentUser?.role === 'student';
     const status = enrollmentStatus[classItem.class_id];
-    console.log(`Rendering class ${classItem.class_name} with status:`, status);
+    // console.log(`Rendering class ${classItem.class_name} with status:`, status);
 
     return (
       <TouchableOpacity 

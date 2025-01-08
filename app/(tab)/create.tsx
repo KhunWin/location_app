@@ -156,7 +156,11 @@ const CreateClass = () => {
     try {
       await createClass(className)
       setClassName('') // Reset form
-      router.replace('/home');
+      // router.replace('/home');
+      router.push({
+        pathname: '/home',
+        params: { refresh: Date.now() } // Add a timestamp to force refresh
+      });
       Alert.alert('Success', 'Class created successfully')
       
     } catch (error) {
