@@ -45,14 +45,17 @@ const CreateSession = () => {
             setIsLoading(false);
         }
     };
-
+    // Function to handle the view attendance button
     const handleViewAttendance = (session) => {
         router.push({
-            pathname: '/ViewAttendance',
+            pathname: '/pages/ViewCheckin',
             params: {
                 classId,
                 className,
+                attendanceCode: session.attendance_code, // Pass the selected attendance_code
+                sessionTitle: session.session_title, // Optional, for display
                 sessionDate: session.date
+
             }
         });
     };

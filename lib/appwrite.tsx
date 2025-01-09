@@ -387,12 +387,91 @@ export const getUserClasses = async () => {
     }
 }
 
+// export const getClassStudents = async (classId) => {
+//     try {
+//         console.log('\n=== Starting getClassStudents ===');
+//         console.log('Input classId:', classId);
+
+//         // Query the class document using class_id
+//         const classes = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.classCollectionId,
+//             [Query.equal('class_id', classId)]
+//         );
+
+//         if (!classes.documents.length) {
+//             console.log('No class found with class_id:', classId);
+//             return [];
+//         }
+
+//         const classDoc = classes.documents[0];
+//         console.log('Class Document found:', JSON.stringify(classDoc, null, 2));
+
+//         // Parse the students string into an array of objects
+//         let studentsArray = [];
+//         if (classDoc.students && classDoc.students.length > 0) {
+//             try {
+//                 const studentsString = classDoc.students[0];
+//                 console.log('Raw students string:', studentsString);
+
+//                 // Clean and parse the string
+//                 const cleanString = studentsString
+//                     .replace(/\n/g, '')
+//                     .replace(/\s+/g, ' ')
+//                     .trim();
+//                 console.log('Cleaned string:', cleanString);
+
+//                 // Parse the cleaned string
+//                 studentsArray = JSON.parse(`[${cleanString}]`);
+//                 console.log('Parsed students array:', JSON.stringify(studentsArray, null, 2));
+//             } catch (parseError) {
+//                 console.error('Error parsing students string:', parseError);
+//                 return [];
+//             }
+//         }
+
+//         // Get student details for each student
+//         const studentsPromises = studentsArray.map(async (studentInfo) => {
+//             try {
+//                 console.log(`Fetching details for student_id: ${studentInfo.student_id}`);
+                
+//                 const studentDoc = await databases.getDocument(
+//                     appwriteConfig.databaseId,
+//                     appwriteConfig.userCollectionId,
+//                     studentInfo.student_id
+//                 );
+
+//                 return {
+//                     $id: studentDoc.$id,
+//                     username: studentDoc.username,
+//                     email: studentDoc.email,
+//                     status: studentInfo.status,
+//                     joined_date: studentInfo.joined_date
+//                 };
+
+//             } catch (error) {
+//                 console.error(`Error fetching student ${studentInfo.student_id}:`, error);
+//                 return null;
+//             }
+//         });
+
+//         const students = await Promise.all(studentsPromises);
+//         const validStudents = students.filter(student => student !== null);
+
+//         console.log('Final processed students:', JSON.stringify(validStudents, null, 2));
+//         return validStudents;
+
+//     } catch (error) {
+//         console.error('Error in getClassStudents:', error);
+//         throw error;
+//     }
+// }
+
 export const getClassStudents = async (classId) => {
     try {
         console.log('\n=== Starting getClassStudents ===');
         console.log('Input classId:', classId);
 
-        // Query the class document using class_id
         const classes = await databases.listDocuments(
             appwriteConfig.databaseId,
             appwriteConfig.classCollectionId,
@@ -407,25 +486,23 @@ export const getClassStudents = async (classId) => {
         const classDoc = classes.documents[0];
         console.log('Class Document found:', JSON.stringify(classDoc, null, 2));
 
-        // Parse the students string into an array of objects
+        // Parse the students array
         let studentsArray = [];
-        if (classDoc.students && classDoc.students.length > 0) {
+        if (classDoc.students && Array.isArray(classDoc.students)) {
             try {
-                const studentsString = classDoc.students[0];
-                console.log('Raw students string:', studentsString);
+                // Parse each student string in the array
+                studentsArray = classDoc.students.map(studentStr => {
+                    try {
+                        return JSON.parse(studentStr);
+                    } catch (parseError) {
+                        console.error('Error parsing student string:', studentStr, parseError);
+                        return null;
+                    }
+                }).filter(student => student !== null); // Remove any failed parses
 
-                // Clean and parse the string
-                const cleanString = studentsString
-                    .replace(/\n/g, '')
-                    .replace(/\s+/g, ' ')
-                    .trim();
-                console.log('Cleaned string:', cleanString);
-
-                // Parse the cleaned string
-                studentsArray = JSON.parse(`[${cleanString}]`);
                 console.log('Parsed students array:', JSON.stringify(studentsArray, null, 2));
             } catch (parseError) {
-                console.error('Error parsing students string:', parseError);
+                console.error('Error processing students array:', parseError);
                 return [];
             }
         }
@@ -445,7 +522,6 @@ export const getClassStudents = async (classId) => {
                     $id: studentDoc.$id,
                     username: studentDoc.username,
                     email: studentDoc.email,
-                    avatar: studentDoc.avatar,
                     status: studentInfo.status,
                     joined_date: studentInfo.joined_date
                 };
@@ -467,6 +543,64 @@ export const getClassStudents = async (classId) => {
         throw error;
     }
 }
+
+//for ViewCheckin.tsx page
+export const getClassAttendanceDays = async (classId) => {
+    try {
+        console.log('\n=== Starting getClassAttendanceDays ===');
+        console.log('Input classId:', classId);
+
+        // Fetch class document by class ID
+        const classDoc = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.classCollectionId,
+            [
+                Query.equal('class_id', classId)
+            ]
+        );
+
+        if (!classDoc.documents.length) {
+            throw new Error('Class not found.');
+        }
+
+        const classData = classDoc.documents[0];
+        console.log('Class Document found:', classData);
+
+        // Parse the attendance_days field
+        const attendanceDays = classData.attendance_days.map((day) => JSON.parse(day));
+        console.log('Parsed attendance_days array:', attendanceDays);
+
+        return attendanceDays;
+    } catch (error) {
+        console.error('Error in getClassAttendanceDays:', error);
+        throw error;
+    }
+};
+
+export const getStudentById = async (studentId) => {
+    try {
+        console.log('Fetching student details for ID:', studentId);
+
+        const studentDoc = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.userCollectionId,
+            [
+                Query.equal('$id', studentId), // Query by student ID
+            ]
+        );
+
+        if (!studentDoc.documents.length) {
+            throw new Error('Student not found');
+        }
+
+        return studentDoc.documents[0]; // Return the student document
+    } catch (error) {
+        console.error('Error in getStudentById:', error);
+        throw error;
+    }
+};
+//end for ViewCheckin.tsx page
+
 
 export const getTeacherClasses = async () => {
     try {

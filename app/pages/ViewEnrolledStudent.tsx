@@ -74,7 +74,7 @@ const ViewAttendance = () => {
 
     const formatStudentId = (id: string) => {
       if (id.length < 4) return id;
-      return `${id.slice(0, 2)}-${id.slice(-2)}`;
+      return `${id.slice(0, 2)}${id.slice(9,11)}${id.slice(-2)}`;
   };
 
     return (
@@ -94,7 +94,6 @@ const ViewAttendance = () => {
                                 <Text className="flex-1 text-white font-medium">SID</Text>
                                 <Text className="flex-1 text-white font-medium">Name</Text>
                                 <Text className="flex-1 text-white font-medium">Status</Text>
-                                <Text className="flex-1 text-white font-medium">Present</Text>
                                 <Text className="flex-1 text-white font-medium">Action</Text>
                             </View>
 
@@ -117,11 +116,11 @@ const ViewAttendance = () => {
                                     }`}>
                                         {student.status}
                                     </Text>
-                                    <View className="flex-1 items-center">
+                                    {/* <View className="flex-1 items-center">
                                         <Text className="text-white">
                                             {attendanceStatus[student.$id] ? 'Yes' : 'No'}
                                         </Text>
-                                    </View>
+                                    </View> */}
                                     <TouchableOpacity 
                                         className="flex-1 items-center"
                                         onPress={() => handleRemoveStudent(student.$id)}
