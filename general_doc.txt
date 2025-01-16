@@ -236,6 +236,9 @@ userCollectionId
   ],
   
 
+##comment from mid-point presentation
+- modify the check-in process. rather than typing the code, create a check-in button so that they don't 
+have to enter the code. easier to check-in.
 
 
 

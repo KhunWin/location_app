@@ -11,6 +11,9 @@ import logout from "../assets/icons/logout.png";
 import eyeHide from "../assets/icons/eye-hide.png";
 import eye from "../assets/icons/eye.png";
 import play from "../assets/icons/play.png";
+import list from "../assets/icons/list.png";
+import list1 from "../assets/icons/list-1.png";
+import record from "../assets/icons/attendance-record.png";
 
 export default {
   play,
@@ -26,4 +29,8 @@ export default {
   logout,
   eyeHide,
   eye,
+  list,
+  list1,
+  record,
+  
 };

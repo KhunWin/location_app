@@ -785,188 +785,6 @@ const safeJsonParse = (str) => {
   };
   
   // Modified enrollInClass function
-// export const enrollInClass = async (classItem, currentUser) => {
-//     console.log('Starting enrollInClass with:', { classItem, currentUser });
-    
-//     try {
-//       if (!databases) {
-//         console.error('Databases instance is undefined');
-//         throw new Error('Database configuration error');
-//       }
-  
-//       // Get class document
-//       console.log('Fetching class document...');
-//       const classes = await databases.listDocuments(
-//         appwriteConfig.databaseId,
-//         appwriteConfig.classCollectionId,
-//         [Query.equal('class_id', classItem.class_id)]
-//       );
-//       console.log('Found classes:', classes);
-  
-//       if (!classes.documents.length) {
-//         throw Error('Class not found');
-//       }
-  
-//       const classDoc = classes.documents[0];
-//       console.log('Class document:', classDoc);
-  
-//       // Handle students array
-//       let studentsArray = classDoc.students || [];
-//       console.log('Current students array:', studentsArray);
-  
-//       // Check for existing enrollment
-//       const isEnrolled = studentsArray.some(student => {
-//         const parsedStudent = safeJsonParse(student);
-//         return parsedStudent.student_id === currentUser.$id;
-//       });
-  
-//       if (isEnrolled) {
-//         throw Error('Already enrolled in this class');
-//       }
-  
-//       // Create new student entry
-//       const newStudent = {
-//         student_id: currentUser.$id,
-//         status: "pending",
-//         joined_date: new Date().toISOString()
-//       };
-//       console.log('New student entry:', newStudent);
-  
-//       // Add to students array
-//       studentsArray.push(JSON.stringify(newStudent));
-  
-//       // Update class document
-//       console.log('Updating class document...');
-//       const updatedClass = await databases.updateDocument(
-//         appwriteConfig.databaseId,
-//         appwriteConfig.classCollectionId,
-//         classDoc.$id,
-//         {
-//           students: studentsArray
-//         }
-//       );
-//       console.log('Updated class document:', updatedClass);
-  
-//       return true;
-//     } catch (error) {
-//       console.error('Error in enrollInClass:', error);
-//       console.error('Error stack:', error.stack);
-//       throw error;
-//     }
-//   };
-
-// export const enrollInClass = async (classItem, currentUser) => {
-//     console.log('Starting enrollInClass with:', { classItem, currentUser });
-    
-//     try {
-//         if (!databases) {
-//             console.error('Databases instance is undefined');
-//             throw new Error('Database configuration error');
-//         }
-
-//         // 1. Update Class Document
-//         console.log('Fetching class document...');
-//         const classes = await databases.listDocuments(
-//             appwriteConfig.databaseId,
-//             appwriteConfig.classCollectionId,
-//             [Query.equal('class_id', classItem.class_id)]
-//         );
-//         console.log('Found classes:', classes);
-
-//         if (!classes.documents.length) {
-//             throw Error('Class not found');
-//         }
-
-//         const classDoc = classes.documents[0];
-//         console.log('Class document:', classDoc);
-
-//         // Handle students array in class document
-//         let studentsArray = classDoc.students || [];
-//         console.log('Current students array in class:', studentsArray);
-
-//         // Check for existing enrollment in class
-//         const isEnrolledInClass = studentsArray.some(student => {
-//             const parsedStudent = safeJsonParse(student);
-//             return parsedStudent.student_id === currentUser.$id;
-//         });
-
-//         if (isEnrolledInClass) {
-//             throw Error('Already enrolled in this class');
-//         }
-
-//         // Create new student entry for class
-//         const newStudentInClass = {
-//             student_id: currentUser.$id,
-//             status: "pending",
-//             joined_date: new Date().toISOString()
-//         };
-//         console.log('New student entry for class:', newStudentInClass);
-
-//         // Update class document
-//         console.log('Updating class document...');
-//         const updatedClass = await databases.updateDocument(
-//             appwriteConfig.databaseId,
-//             appwriteConfig.classCollectionId,
-//             classDoc.$id,
-//             {
-//                 students: [...studentsArray, JSON.stringify(newStudentInClass)]
-//             }
-//         );
-//         console.log('Updated class document:', updatedClass);
-
-//         // 2. Update User Document
-//         console.log('Updating user document...');
-        
-//         // Get current joined_classes array
-//         let userJoinedClasses = currentUser.joined_classes || [];
-//         console.log('Current joined_classes:', userJoinedClasses);
-
-//         // Parse existing joined_classes if it's a string
-//         if (typeof userJoinedClasses === 'string') {
-//             try {
-//                 userJoinedClasses = JSON.parse(userJoinedClasses);
-//             } catch (e) {
-//                 console.log('Error parsing joined_classes, initializing as empty array');
-//                 userJoinedClasses = [];
-//             }
-//         }
-
-//         // Ensure it's an array
-//         if (!Array.isArray(userJoinedClasses)) {
-//             userJoinedClasses = [];
-//         }
-
-//         // Create new class entry for user
-//         const newClassEntry = {
-//             class_id: classItem.class_id,
-//             status: "pending"
-//         };
-
-//         // Add new class to user's joined_classes
-//         userJoinedClasses.push(newClassEntry);
-//         console.log('Updated joined_classes array:', userJoinedClasses);
-
-//         // Update user document
-//         const updatedUser = await databases.updateDocument(
-//             appwriteConfig.databaseId,
-//             appwriteConfig.userCollectionId,
-//             currentUser.$id,
-//             {
-//                 joined_classes: [JSON.stringify(userJoinedClasses)]
-//             }
-//         );
-//         console.log('Updated user document:', updatedUser);
-
-//         return {
-//             classUpdate: updatedClass,
-//             userUpdate: updatedUser
-//         };
-//     } catch (error) {
-//         console.error('Error in enrollInClass:', error);
-//         console.error('Error stack:', error.stack);
-//         throw error;
-//     }
-// };
 
 export const enrollInClass = async (classItem, currentUser) => {
     // console.log('Starting enrollInClass with:', { classItem, currentUser });
@@ -1082,8 +900,6 @@ export const enrollInClass = async (classItem, currentUser) => {
     }
 };
 
-
-
 // // Calculate distance between two points using Haversine formula
 export const calculateDistance = (lat1, lon1, lat2, lon2) => {
     console.log('Calculating distance between points:', {
@@ -1106,7 +922,6 @@ export const calculateDistance = (lat1, lon1, lat2, lon2) => {
     console.log('Calculated distance:', distance, 'meters');
     return distance;
 };
-
 
 // Helper function to parse joined_classes
 export const parseJoinedClasses = (classesArray) => {
@@ -1163,87 +978,6 @@ export const parseJoinedClasses = (classesArray) => {
 //         return documents;
 //     } catch (error) {
 //         console.error('Error inspecting class collection:', error);
-//         throw error;
-//     }
-// };
-
-//only parsing the first student in the array
-// export const findAttendanceSession = async (classId, attendanceCode, studentId, currentUser) => {
-//     try {
-//         console.log('Finding attendance session with:', {
-//             classId,
-//             attendanceCode,
-//             studentId
-//         });
-
-//         // List documents with a query filter for class_id
-//         const classDocuments = await databases.listDocuments(
-//             appwriteConfig.databaseId,
-//             appwriteConfig.classCollectionId,
-//             [
-//                 Query.equal('class_id', classId)
-//             ]
-//         );
-
-//         console.log('Found class documents:', classDocuments);
-
-//         if (!classDocuments.documents || classDocuments.documents.length === 0) {
-//             throw new Error('Class not found');
-//         }
-
-//         const classDoc = classDocuments.documents[0];
-//         console.log('Retrieved class document:', classDoc);
-
-//         // Verify student enrollment
-//         let studentEnrollment;
-//         try {
-//             if (typeof classDoc.students[0] === 'string') {
-//                 studentEnrollment = JSON.parse(classDoc.students[0]);
-//             } else {
-//                 studentEnrollment = classDoc.students[0];
-//             }
-//         } catch (error) {
-//             console.error('Error parsing student enrollment:', error);
-//             throw new Error('Invalid student enrollment data');
-//         }
-//         console.log('Student enrollment:', studentEnrollment);
-
-//         if (studentEnrollment.student_id !== studentId || studentEnrollment.status !== 'approved') {
-//             throw new Error('You are not enrolled in this class or your enrollment is pending');
-//         }
-
-//         // Parse attendance days
-//         let attendanceDays = [];
-//         try {
-//             if (Array.isArray(classDoc.attendance_days)) {
-//                 attendanceDays = classDoc.attendance_days.map(day => {
-//                     if (typeof day === 'string') {
-//                         return JSON.parse(day);
-//                     }
-//                     return day;
-//                 });
-//             }
-//         } catch (error) {
-//             console.error('Error parsing attendance days:', error);
-//             throw new Error('Invalid attendance days data');
-//         }
-
-//         console.log('Parsed attendance days:', attendanceDays);
-
-//         // Find active attendance session
-//         const session = attendanceDays.find(
-//             day => day.attendance_code === attendanceCode
-//         );
-
-//         console.log('Found attendance session:', session);
-
-//         if (!session) {
-//             throw new Error('Invalid attendance code');
-//         }
-
-//         return { classDoc, session };
-//     } catch (error) {
-//         console.error('Error finding attendance session:', error);
 //         throw error;
 //     }
 // };
@@ -1467,8 +1201,16 @@ export const submitAttendance = async (classId, attendanceCode, studentId, locat
     }
 };
 
-
-
+//logout function
+export const logoutUser = async () => {
+    try {
+        await account.deleteSessions();
+        return true;
+    } catch (error) {
+        console.log("Logout error:", error);
+        throw error;
+    }
+}
 
 
   
