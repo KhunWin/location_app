@@ -348,13 +348,70 @@ export const getClassStudents = async (classId) => {
     }
 }
 
+//this one is only updating the status of the student in classes
+// export const approveStudent = async (classId, studentId) => {
+//     try {
+//         // console.log('\n=== Starting approveStudent ===');
+//         // console.log('ClassId:', classId);
+//         // console.log('StudentId:', studentId);
+
+//         // Get the class document
+//         const classes = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.classCollectionId,
+//             [Query.equal('class_id', classId)]
+//         );
+
+//         if (!classes.documents.length) {
+//             console.log('No class found with class_id:', classId);
+//             throw new Error('Class not found');
+//         }
+
+//         const classDoc = classes.documents[0];
+//         // console.log('Found class document:', classDoc.$id);
+
+//         // Parse and update the students array
+//         let studentsArray = classDoc.students.map(studentStr => {
+//             const student = JSON.parse(studentStr);
+//             if (student.student_id === studentId) {
+//                 console.log('Updating status for student:', studentId);
+//                 return JSON.stringify({
+//                     ...student,
+//                     status: 'approved'
+//                 });
+//             }
+//             return studentStr;
+//         });
+
+//         // console.log('Updated students array:', studentsArray);
+
+//         // Update the class document
+//         const updatedClass = await databases.updateDocument(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.classCollectionId,
+//             classDoc.$id,
+//             {
+//                 students: studentsArray
+//             }
+//         );
+
+//         console.log('Class document updated successfully');
+//         return updatedClass;
+
+//     } catch (error) {
+//         console.error('Error in approveStudent:', error);
+//         throw error;
+//     }
+// }
+
+
 export const approveStudent = async (classId, studentId) => {
     try {
-        // console.log('\n=== Starting approveStudent ===');
-        // console.log('ClassId:', classId);
-        // console.log('StudentId:', studentId);
+        console.log('\n=== Starting approveStudent ===');
+        console.log('ClassId:', classId);
+        console.log('StudentId:', studentId);
 
-        // Get the class document
+        // 1. Update class document (students array)
         const classes = await databases.listDocuments(
             appwriteConfig.databaseId,
             appwriteConfig.classCollectionId,
@@ -367,13 +424,13 @@ export const approveStudent = async (classId, studentId) => {
         }
 
         const classDoc = classes.documents[0];
-        // console.log('Found class document:', classDoc.$id);
+        console.log('Found class document:', classDoc);
 
-        // Parse and update the students array
+        // Update students array in class document
         let studentsArray = classDoc.students.map(studentStr => {
             const student = JSON.parse(studentStr);
             if (student.student_id === studentId) {
-                console.log('Updating status for student:', studentId);
+                console.log('Updating status for student in class:', studentId);
                 return JSON.stringify({
                     ...student,
                     status: 'approved'
@@ -382,20 +439,64 @@ export const approveStudent = async (classId, studentId) => {
             return studentStr;
         });
 
-        // console.log('Updated students array:', studentsArray);
-
-        // Update the class document
-        const updatedClass = await databases.updateDocument(
+        // 2. Update user document (joined_classes array)
+        const users = await databases.listDocuments(
             appwriteConfig.databaseId,
-            appwriteConfig.classCollectionId,
-            classDoc.$id,
-            {
-                students: studentsArray
-            }
+            appwriteConfig.userCollectionId,
+            [Query.equal('$id', studentId)]
         );
 
-        console.log('Class document updated successfully');
-        return updatedClass;
+        if (!users.documents.length) {
+            console.log('No user found with id:', studentId);
+            throw new Error('User not found');
+        }
+
+        const userDoc = users.documents[0];
+        console.log('Found user document:', userDoc);
+
+        // Update joined_classes array in user document
+        let joinedClassesArray = userDoc.joined_classes.map(classStr => {
+            const classObj = JSON.parse(classStr);
+            if (classObj.class_id === classId) {
+                console.log('Updating status for class in user document:', classId);
+                return JSON.stringify({
+                    ...classObj,
+                    status: 'approved'
+                });
+            }
+            return classStr;
+        });
+
+        // Perform both updates
+        const [updatedClass, updatedUser] = await Promise.all([
+            // Update class document
+            databases.updateDocument(
+                appwriteConfig.databaseId,
+                appwriteConfig.classCollectionId,
+                classDoc.$id,
+                {
+                    students: studentsArray
+                }
+            ),
+            // Update user document
+            databases.updateDocument(
+                appwriteConfig.databaseId,
+                appwriteConfig.userCollectionId,
+                userDoc.$id,
+                {
+                    joined_classes: joinedClassesArray
+                }
+            )
+        ]);
+
+        console.log('Both documents updated successfully');
+        console.log('Updated class:', updatedClass);
+        console.log('Updated user:', updatedUser);
+
+        return {
+            classUpdate: updatedClass,
+            userUpdate: updatedUser
+        };
 
     } catch (error) {
         console.error('Error in approveStudent:', error);
