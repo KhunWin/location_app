@@ -29,66 +29,6 @@ const avatars = new Avatars(client);
 const databases = new Databases(client);
 
 
-//not creating a new user
-// export const createUser = async (email, password, username, role) => {
-//     try {
-//         // First, check if there's an active session and delete it
-//         try {
-//             await account.deleteSession('current');
-//         } catch (e) {
-//             // Ignore error if no session exists
-//         }
-
-//         const newAccount = await account.create(
-//             ID.unique(),
-//             email, 
-//             password,
-//             username
-//         );
-
-//         if(!newAccount) throw Error;
-
-//         // const avatarUrl = avatars.getInitials(username);
-
-//         // Define the class_id and joined_classes structure
-//         const classId = "23424Id";
-//         // Convert the joined_classes array into a JSON string
-//         const joinedClasses = JSON.stringify([
-//             {
-//                 class_id: classId,
-//                 status: "pending", // Default status
-//             },
-//         ]);
-
-//         const newUser = await databases.createDocument(
-//             appwriteConfig.databaseId,
-//             appwriteConfig.userCollectionId,
-//             ID.unique(),
-//             {
-//                 accountId: newAccount.$id,
-//                 email,
-//                 username,
-//                 // avatar: avatarUrl,
-//                 role: role, // Default role
-//                 joined_classes: [joinedClasses],
-//             }
-//         );
-
-//         // Create new session after everything else is done
-//         const session = await account.createEmailPasswordSession(email, password);
-        
-//         return {
-//             user: newUser,
-//             session: session
-//         };
-
-//     } catch(error) {
-//         console.log(error);
-//         throw error; // Throw the original error
-//     }
-// }
-
-
 export const  signIn = async (email, password) => {
     try { 
         // Check for and delete any existing session
@@ -106,31 +46,6 @@ export const  signIn = async (email, password) => {
         throw error; // Throw the original error
     }
 }
-
-// export const getCurrentUser = async () => {
-
-//     try {
-//         const currentAccount = await account.get();
-
-//         if (!currentAccount) throw Error;
-
-//         const currentUser = await databases.listDocuments(
-//             appwriteConfig.databaseId,
-//             appwriteConfig.userCollectionId,
-//             [Query.equal('accountId', currentAccount.$id)]
-
-//         );
-
-//         if (!currentUser) throw Error;
-
-//         return currentUser.documents[0]; //return only one user
-
-//     } catch (error) {
-//         console.log(error);
-//     }
-
-// }
-
 
 export const createUser = async (email, password, username, role) => {
     try {
@@ -314,38 +229,6 @@ export const createClass = async (className) => {
 }
 
 // Get all classes
-
-// export const getUserClasses = async () => {
-//     try {
-//         const session = await account.getSession('current');
-//         if (!session) throw new Error('Not authenticated');
-
-//         // First get the user document to get the correct $id
-//         const users = await databases.listDocuments(
-//             appwriteConfig.databaseId,
-//             appwriteConfig.userCollectionId,
-//             [Query.equal('accountId', session.userId)]
-//         );
-
-//         if (!users.documents.length) throw new Error('User not found');
-//         const user = users.documents[0];
-
-//         // Now query classes with the correct user.$id
-//         const classes = await databases.listDocuments(
-//             appwriteConfig.databaseId,
-//             appwriteConfig.classCollectionId,
-//             [
-//                 Query.equal('created_by', user.$id)  // Use user.$id instead of session.userId
-//             ]
-//         );
-
-//         return classes.documents;
-//     } catch (error) {
-//         console.error('Error fetching classes:', error);
-//         throw error;
-//     }
-// }
-
 ///this work for both teacher and student role, depending on the role of the user, the classes will be fetched
 export const getUserClasses = async () => {
     try {
@@ -387,85 +270,6 @@ export const getUserClasses = async () => {
     }
 }
 
-// export const getClassStudents = async (classId) => {
-//     try {
-//         console.log('\n=== Starting getClassStudents ===');
-//         console.log('Input classId:', classId);
-
-//         // Query the class document using class_id
-//         const classes = await databases.listDocuments(
-//             appwriteConfig.databaseId,
-//             appwriteConfig.classCollectionId,
-//             [Query.equal('class_id', classId)]
-//         );
-
-//         if (!classes.documents.length) {
-//             console.log('No class found with class_id:', classId);
-//             return [];
-//         }
-
-//         const classDoc = classes.documents[0];
-//         console.log('Class Document found:', JSON.stringify(classDoc, null, 2));
-
-//         // Parse the students string into an array of objects
-//         let studentsArray = [];
-//         if (classDoc.students && classDoc.students.length > 0) {
-//             try {
-//                 const studentsString = classDoc.students[0];
-//                 console.log('Raw students string:', studentsString);
-
-//                 // Clean and parse the string
-//                 const cleanString = studentsString
-//                     .replace(/\n/g, '')
-//                     .replace(/\s+/g, ' ')
-//                     .trim();
-//                 console.log('Cleaned string:', cleanString);
-
-//                 // Parse the cleaned string
-//                 studentsArray = JSON.parse(`[${cleanString}]`);
-//                 console.log('Parsed students array:', JSON.stringify(studentsArray, null, 2));
-//             } catch (parseError) {
-//                 console.error('Error parsing students string:', parseError);
-//                 return [];
-//             }
-//         }
-
-//         // Get student details for each student
-//         const studentsPromises = studentsArray.map(async (studentInfo) => {
-//             try {
-//                 console.log(`Fetching details for student_id: ${studentInfo.student_id}`);
-                
-//                 const studentDoc = await databases.getDocument(
-//                     appwriteConfig.databaseId,
-//                     appwriteConfig.userCollectionId,
-//                     studentInfo.student_id
-//                 );
-
-//                 return {
-//                     $id: studentDoc.$id,
-//                     username: studentDoc.username,
-//                     email: studentDoc.email,
-//                     status: studentInfo.status,
-//                     joined_date: studentInfo.joined_date
-//                 };
-
-//             } catch (error) {
-//                 console.error(`Error fetching student ${studentInfo.student_id}:`, error);
-//                 return null;
-//             }
-//         });
-
-//         const students = await Promise.all(studentsPromises);
-//         const validStudents = students.filter(student => student !== null);
-
-//         console.log('Final processed students:', JSON.stringify(validStudents, null, 2));
-//         return validStudents;
-
-//     } catch (error) {
-//         console.error('Error in getClassStudents:', error);
-//         throw error;
-//     }
-// }
 
 export const getClassStudents = async (classId) => {
     try {
@@ -540,6 +344,109 @@ export const getClassStudents = async (classId) => {
 
     } catch (error) {
         console.error('Error in getClassStudents:', error);
+        throw error;
+    }
+}
+
+export const approveStudent = async (classId, studentId) => {
+    try {
+        // console.log('\n=== Starting approveStudent ===');
+        // console.log('ClassId:', classId);
+        // console.log('StudentId:', studentId);
+
+        // Get the class document
+        const classes = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.classCollectionId,
+            [Query.equal('class_id', classId)]
+        );
+
+        if (!classes.documents.length) {
+            console.log('No class found with class_id:', classId);
+            throw new Error('Class not found');
+        }
+
+        const classDoc = classes.documents[0];
+        // console.log('Found class document:', classDoc.$id);
+
+        // Parse and update the students array
+        let studentsArray = classDoc.students.map(studentStr => {
+            const student = JSON.parse(studentStr);
+            if (student.student_id === studentId) {
+                console.log('Updating status for student:', studentId);
+                return JSON.stringify({
+                    ...student,
+                    status: 'approved'
+                });
+            }
+            return studentStr;
+        });
+
+        // console.log('Updated students array:', studentsArray);
+
+        // Update the class document
+        const updatedClass = await databases.updateDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.classCollectionId,
+            classDoc.$id,
+            {
+                students: studentsArray
+            }
+        );
+
+        console.log('Class document updated successfully');
+        return updatedClass;
+
+    } catch (error) {
+        console.error('Error in approveStudent:', error);
+        throw error;
+    }
+}
+
+export const removeStudent = async (classId, studentId) => {
+    try {
+        console.log('\n=== Starting removeStudent ===');
+        console.log('ClassId:', classId);
+        console.log('StudentId:', studentId);
+
+        // Get the class document
+        const classes = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.classCollectionId,
+            [Query.equal('class_id', classId)]
+        );
+
+        if (!classes.documents.length) {
+            console.log('No class found with class_id:', classId);
+            throw new Error('Class not found');
+        }
+
+        const classDoc = classes.documents[0];
+        console.log('Found class document:', classDoc.$id);
+
+        // Parse and filter out the student to remove
+        let studentsArray = classDoc.students
+            .map(studentStr => JSON.parse(studentStr))
+            .filter(student => student.student_id !== studentId)
+            .map(student => JSON.stringify(student));
+
+        console.log('Updated students array after removal:', studentsArray);
+
+        // Update the class document
+        const updatedClass = await databases.updateDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.classCollectionId,
+            classDoc.$id,
+            {
+                students: studentsArray
+            }
+        );
+
+        console.log('Class document updated successfully - student removed');
+        return updatedClass;
+
+    } catch (error) {
+        console.error('Error in removeStudent:', error);
         throw error;
     }
 }
@@ -771,7 +678,6 @@ export const getClassSessions = async (classId: string) => {
         throw error;
     }
 };
-
 
 //end for CreateSession.tsx page
 
