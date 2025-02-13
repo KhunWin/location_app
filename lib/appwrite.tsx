@@ -1,6 +1,7 @@
 import SignIn from '@/app/(auth)/sign-in';
 import * as Location from 'expo-location';  // Add this import
-import { Client, Account, Avatars, Databases, ID, Query, AppwriteException } from 'react-native-appwrite';
+import { Client, Account, Avatars, Databases,Storage, ID, Query, AppwriteException } from 'react-native-appwrite';
+import * as DocumentPicker from 'expo-document-picker';
 
 
 // import { Client, Account, ID, Avatars, Databases } from 'appwrite';
@@ -11,7 +12,7 @@ export const appwriteConfig = {
     databaseId: '6733094b0030099a3e4c',
     userCollectionId: '67330a2600212bd7b42c',
     classCollectionId: '6770252d001271cb06f6',
-    videoCollectionId: '67330a5f000505b03f74',
+    fileCollectionId: '67ad50fe0007a8b0f20a',
     storageId: '67330bfe001b740c30af',
 
 }
@@ -27,6 +28,8 @@ client
 const account = new Account(client);
 const avatars = new Avatars(client);
 const databases = new Databases(client);
+const storage = new Storage(client);  // Add this line
+
 
 
 export const  signIn = async (email, password) => {
@@ -270,7 +273,6 @@ export const getUserClasses = async () => {
     }
 }
 
-
 export const getClassStudents = async (classId) => {
     try {
         console.log('\n=== Starting getClassStudents ===');
@@ -347,63 +349,6 @@ export const getClassStudents = async (classId) => {
         throw error;
     }
 }
-
-//this one is only updating the status of the student in classes
-// export const approveStudent = async (classId, studentId) => {
-//     try {
-//         // console.log('\n=== Starting approveStudent ===');
-//         // console.log('ClassId:', classId);
-//         // console.log('StudentId:', studentId);
-
-//         // Get the class document
-//         const classes = await databases.listDocuments(
-//             appwriteConfig.databaseId,
-//             appwriteConfig.classCollectionId,
-//             [Query.equal('class_id', classId)]
-//         );
-
-//         if (!classes.documents.length) {
-//             console.log('No class found with class_id:', classId);
-//             throw new Error('Class not found');
-//         }
-
-//         const classDoc = classes.documents[0];
-//         // console.log('Found class document:', classDoc.$id);
-
-//         // Parse and update the students array
-//         let studentsArray = classDoc.students.map(studentStr => {
-//             const student = JSON.parse(studentStr);
-//             if (student.student_id === studentId) {
-//                 console.log('Updating status for student:', studentId);
-//                 return JSON.stringify({
-//                     ...student,
-//                     status: 'approved'
-//                 });
-//             }
-//             return studentStr;
-//         });
-
-//         // console.log('Updated students array:', studentsArray);
-
-//         // Update the class document
-//         const updatedClass = await databases.updateDocument(
-//             appwriteConfig.databaseId,
-//             appwriteConfig.classCollectionId,
-//             classDoc.$id,
-//             {
-//                 students: studentsArray
-//             }
-//         );
-
-//         console.log('Class document updated successfully');
-//         return updatedClass;
-
-//     } catch (error) {
-//         console.error('Error in approveStudent:', error);
-//         throw error;
-//     }
-// }
-
 
 export const approveStudent = async (classId, studentId) => {
     try {
@@ -942,52 +887,6 @@ export const parseJoinedClasses = (classesArray) => {
     }).filter(item => item !== null);
 };
 
-///almost finding the error
-
-// // Add this function to inspect database documents
-// export const inspectClassCollection = async () => {
-//     try {
-//         console.log('Inspecting class collection...');
-        
-//         // List documents in the class collection
-//         const documents = await databases.listDocuments(
-//             appwriteConfig.databaseId,
-//             appwriteConfig.classCollectionId,
-//             [
-//                 Query.limit(100) // Adjust limit as needed
-//             ]
-//         );
-
-//         console.log('Class Collection Structure:', {
-//             totalDocuments: documents.total,
-//             collectionId: appwriteConfig.classCollectionId,
-//         });
-
-//         // Print structure of first document to understand schema
-//         if (documents.documents.length > 0) {
-//             console.log('Example Document Structure:', {
-//                 keys: Object.keys(documents.documents[0]),
-//                 idField: documents.documents[0].$id, // Check what the ID field is actually called
-//                 fullDocument: documents.documents[0]
-//             });
-//         }
-
-//         // Print all document IDs for comparison
-//         console.log('Available Class IDs:', documents.documents.map(doc => ({
-//             class_id: doc.class_id,
-//             class_name: doc.class_name || 'Unnamed Class',
-//             created_by: doc.created_by || 'Unknown User',
-//             students: doc.students[0] || 'No students',
-//             attendace_days: doc.attendance_days[0] || 'No attendance days',
-
-//         })));
-
-//         return documents;
-//     } catch (error) {
-//         console.error('Error inspecting class collection:', error);
-//         throw error;
-//     }
-// };
 
 export const findAttendanceSession = async (classId, attendanceCode, studentId, currentUser) => {
     try {
@@ -1220,4 +1119,109 @@ export const logoutUser = async () => {
 }
 
 
-  
+// export const uploadFile = async (fileData) => {
+//     try {
+//         console.log('Starting file upload');
+        
+//         // Prepare the file data similar to the sample code
+//         const preparedFile = {
+//             name: fileData.name,
+//             type: fileData.type,
+//             size: fileData.size,
+//             uri: fileData.uri
+//         };
+
+//         console.log('Prepared file:', preparedFile);
+
+//         // Upload directly to Appwrite storage
+//         const uploadResult = await storage.createFile(
+//             appwriteConfig.storageId,
+//             ID.unique(),
+//             preparedFile,  // Send the prepared file object directly
+//             ['read("any")', 'write("any")']
+//         );
+
+//         console.log('Upload result:', uploadResult);
+//         return uploadResult;
+
+//     } catch (error) {
+//         console.error('Error uploading file:', error);
+//         throw error;
+//     }
+// };
+
+export const listFiles = async () => {
+    try {
+        const files = await storage.listFiles(appwriteConfig.storageId);
+        
+        // Get file URLs and other details
+        const fileDetails = files.files.map(file => ({
+            name: file.name,
+            size: `${(file.sizeOriginal / 1024 / 1024).toFixed(2)} MB`,
+            created: new Date(file.$createdAt).toLocaleString(),
+            fileId: file.$id,
+            url: storage.getFileView(appwriteConfig.storageId, file.$id).href
+        }));
+
+        console.log('Retrieved files:', fileDetails);
+        return fileDetails;
+    } catch (error) {
+        console.error('Error listing files:', error);
+        throw error;
+    }
+};
+
+export const uploadFile = async (fileData) => {
+    try {
+        console.log('Starting file upload');
+        
+        // Get current user
+        const currentUser = await getCurrentUser();
+        
+        // Prepare the file data
+        const preparedFile = {
+            name: fileData.name,
+            type: fileData.type,
+            size: fileData.size,
+            uri: fileData.uri
+        };
+
+        console.log('Prepared file:', preparedFile);
+
+        // Upload to Appwrite storage
+        const uploadResult = await storage.createFile(
+            appwriteConfig.storageId,
+            ID.unique(),
+            preparedFile,
+            ['read("any")', 'write("any")']
+        );
+
+        // Get file URL
+        const fileURL = storage.getFileView(
+            appwriteConfig.storageId,
+            uploadResult.$id
+        ).href;
+
+        // Create metadata document in fileCollection
+        const fileMetadata = await databases.createDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.fileCollectionId,
+            ID.unique(),
+            {
+                filename: fileData.name,
+                creator: currentUser.$id,
+                fileURL: fileURL
+            }
+        );
+
+        console.log('File metadata created:', fileMetadata);
+        return {
+            uploadResult,
+            fileMetadata
+        };
+
+    } catch (error) {
+        console.error('Error uploading file:', error);
+        throw error;
+    }
+};
