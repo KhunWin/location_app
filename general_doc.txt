@@ -43,11 +43,17 @@ This collection stores all the class-related information, including the teacher 
 
 classCollectionId
 #### **Document Structure**
-```json
+
 {
   "class_id": "<unique_class_id>",
   "class_name": "Math 101",
   "created_by": "<teacher_id>",  // Reference to the teacher's user ID
+  "class_location" : [
+    {
+     "latitude": 37.7749,
+      "longitude": -122.4194 
+    }
+  ]
   "students": [                 // List of students who joined the class
     {
       "student_id": "<student_id>",
@@ -81,6 +87,7 @@ filecollectionId
   "Document ID" : "_id",
   "filename" : "myfile1",
   "creator" : "6770e2e600094f0b8bf0",
+  "class_id" : "67ae43b0001a50feec61",
   "fileURL" : "https://cloud.appwrite.io/v1/storage/buckets/67330bfe001b740c30af/files/67ae2e490006f1d213df/view?project=673308040024ad5f0292"
 }
 ```

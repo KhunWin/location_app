@@ -6,14 +6,16 @@ import { uploadFile, getCurrentUser, listFiles } from '../lib/appwrite';
 
 import CustomButton from '@/components/CustomButton';
 
+import { useLocalSearchParams } from 'expo-router';
+
 const Fileupload = () => {
   const [isUploading, setIsUploading] = useState(false);
+  const { classId } = useLocalSearchParams();
 
-  // Add handleViewFiles function
   const handleViewFiles = async () => {
     try {
-      console.log('Fetching files...');
-      await listFiles();
+      console.log('Fetching files for class:', classId);
+      await listFiles(classId);
     } catch (error) {
       console.error('Error viewing files:', error);
       Alert.alert('Error', 'Failed to retrieve files');
@@ -23,7 +25,7 @@ const Fileupload = () => {
   const handleFileUpload = async () => {
     try {
       setIsUploading(true);
-      console.log('Starting file upload process...');
+      console.log('Starting file upload process for class:', classId);
 
       // Pick a document
       const result = await DocumentPicker.getDocumentAsync({
@@ -64,18 +66,20 @@ const Fileupload = () => {
         uri: fileAsset.uri,
         name: fileAsset.name,
         type: fileAsset.mimeType,
-        size: fileAsset.size
+        size: fileAsset.size,
+        classId: classId // Add classId to the file object
       };
       
       // Upload file
-      console.log('Attempting to upload file...');
-      const uploadResult = await uploadFile(file);  // Changed variable name from result to uploadResult
+      console.log('Attempting to upload file with class ID:', classId);
+      const uploadResult = await uploadFile(file);
       
       console.log('Upload completed successfully:', {
         fileId: uploadResult.uploadResult.$id,
         fileName: uploadResult.fileMetadata.filename,
         fileURL: uploadResult.fileMetadata.fileURL,
-        creator: uploadResult.fileMetadata.creator
+        creator: uploadResult.fileMetadata.creator,
+        classId: uploadResult.fileMetadata.class_id
       });
 
       Alert.alert('Success', 'File uploaded successfully');

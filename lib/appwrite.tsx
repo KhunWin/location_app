@@ -4,6 +4,7 @@ import { Client, Account, Avatars, Databases,Storage, ID, Query, AppwriteExcepti
 import * as DocumentPicker from 'expo-document-picker';
 
 
+
 // import { Client, Account, ID, Avatars, Databases } from 'appwrite';
 export const appwriteConfig = {
     endpoint: 'https://cloud.appwrite.io/v1',
@@ -153,7 +154,7 @@ export const getCurrentUser = async () => {
     try {
         console.log('Getting current account...');
         const currentAccount = await account.get();
-        console.log('Current account:', currentAccount);
+        // console.log('Current account:', currentAccount);
 
         if (!currentAccount) {
             console.log('No current account found');
@@ -188,13 +189,65 @@ export const getCurrentUser = async () => {
 
 //creating a class
 
-export const createClass = async (className) => {
+//without location data
+// export const createClass = async (className) => {
+//     try {
+//         // Debug: Check if we have a current session
+//         const session = await account.getSession('current');
+//         if (!session) throw new Error('Not authenticated');
+
+//         // Get user details from users collection
+//         const users = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.userCollectionId,
+//             [
+//                 Query.equal('accountId', session.userId)
+//             ]
+//         );
+
+//         if (!users.documents.length) throw new Error('User not found');
+//         const user = users.documents[0];
+//         // Debug: Log class document being created
+//         const classData = {
+//             class_id: ID.unique(),
+//             class_name: className,
+//             created_by: user.$id,
+//             students: [],
+//             attendance_days: []
+//         };
+//         // console.log('Attempting to create class with data:', JSON.stringify(classData, null, 2));
+
+
+//         // Create new class document
+//         const newClass = await databases.createDocument(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.classCollectionId,
+//             ID.unique(),
+//             classData
+//         );
+
+//         return newClass;
+
+//     } catch (error) {
+//         throw error;
+//     }
+// }
+
+//with location data
+export const createClass = async (className, location) => {
     try {
-        // Debug: Check if we have a current session
+        console.log('createClass function received:', {
+            className,
+            location
+        });
+
+        // Get location coordinates
+        const locationCoords = await getLocationCoordinates();
+        console.log('Location coordinates for class:', locationCoords);
+
         const session = await account.getSession('current');
         if (!session) throw new Error('Not authenticated');
 
-        // Get user details from users collection
         const users = await databases.listDocuments(
             appwriteConfig.databaseId,
             appwriteConfig.userCollectionId,
@@ -205,18 +258,19 @@ export const createClass = async (className) => {
 
         if (!users.documents.length) throw new Error('User not found');
         const user = users.documents[0];
-        // Debug: Log class document being created
+
         const classData = {
             class_id: ID.unique(),
             class_name: className,
             created_by: user.$id,
+            // class_location: [locationCoords], // Use the obtained location
+            class_location: [JSON.stringify(locationCoords)],
             students: [],
             attendance_days: []
         };
-        // console.log('Attempting to create class with data:', JSON.stringify(classData, null, 2));
 
+        console.log('Attempting to create class with data:', classData);
 
-        // Create new class document
         const newClass = await databases.createDocument(
             appwriteConfig.databaseId,
             appwriteConfig.classCollectionId,
@@ -224,12 +278,15 @@ export const createClass = async (className) => {
             classData
         );
 
+        console.log('Class created successfully:', newClass);
         return newClass;
 
     } catch (error) {
+        console.error('Error in createClass:', error);
         throw error;
     }
-}
+};
+
 
 // Get all classes
 ///this work for both teacher and student role, depending on the role of the user, the classes will be fetched
@@ -617,6 +674,7 @@ const getLocationCoordinates = async () => {
         return { latitude: 0, longitude: 0 };
     }
 };
+
 
 export const createClassSession = async (classId: string, sessionTitle: string) => {
     try {
@@ -1150,21 +1208,60 @@ export const logoutUser = async () => {
 //     }
 // };
 
-export const listFiles = async () => {
-    try {
-        const files = await storage.listFiles(appwriteConfig.storageId);
+// export const listFiles = async () => {
+//     try {
+//         const files = await storage.listFiles(appwriteConfig.storageId);
         
-        // Get file URLs and other details
-        const fileDetails = files.files.map(file => ({
-            name: file.name,
-            size: `${(file.sizeOriginal / 1024 / 1024).toFixed(2)} MB`,
-            created: new Date(file.$createdAt).toLocaleString(),
-            fileId: file.$id,
-            url: storage.getFileView(appwriteConfig.storageId, file.$id).href
-        }));
+//         // Get file URLs and other details
+//         const fileDetails = files.files.map(file => ({
+//             name: file.name,
+//             size: `${(file.sizeOriginal / 1024 / 1024).toFixed(2)} MB`,
+//             created: new Date(file.$createdAt).toLocaleString(),
+//             fileId: file.$id,
+//             url: storage.getFileView(appwriteConfig.storageId, file.$id).href,
 
-        console.log('Retrieved files:', fileDetails);
-        return fileDetails;
+//         }));
+
+//         console.log('Retrieved files:', fileDetails);
+//         return fileDetails;
+//     } catch (error) {
+//         console.error('Error listing files:', error);
+//         throw error;
+//     }
+// };
+
+
+
+export const listFiles = async (classId: string) => {
+    try {
+        // First, create a query to filter files by class_id
+        const queries = [
+            Query.equal('class_id', classId)
+        ];
+
+        // Get files with the query filter
+        const files = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.fileCollectionId,
+            queries
+        );
+
+        // Log the raw response
+        console.log('Raw database response:', files);
+
+        // Log each file document
+        files.documents.forEach((file, index) => {
+            console.log(`File ${index + 1}:`, {
+                documentId: file.$id,
+                filename: file.filename,
+                creator: file.creator,
+                classId: file.class_id,
+                fileURL: file.fileURL,
+                createdAt: file.$createdAt
+            });
+        });
+
+        return files.documents;
     } catch (error) {
         console.error('Error listing files:', error);
         throw error;
@@ -1210,7 +1307,9 @@ export const uploadFile = async (fileData) => {
             {
                 filename: fileData.name,
                 creator: currentUser.$id,
-                fileURL: fileURL
+                fileURL: fileURL,
+                class_id: fileData.classId // Add class_id to the metadata
+
             }
         );
 
@@ -1225,3 +1324,4 @@ export const uploadFile = async (fileData) => {
         throw error;
     }
 };
+

@@ -34,87 +34,6 @@ const Home = () => {
     });
   };
 
-// const loadUserAndClasses = async () => {
-//   try {
-//       setIsLoading(true);
-      
-//       // Get current user and their role
-//       const user = await getCurrentUser();
-//       // console.log('Current user:', user);
-//       setCurrentUser(user);
-
-//       // Get classes
-//       const userClasses = await getUserClasses();
-//       setClasses(userClasses);
-
-//       // Set enrollment status for students
-//       if (user && user.role === 'student') {
-//           const statusObj = {};
-          
-//           // Check each class's students array for the current user's status
-//           userClasses.forEach(classItem => {
-//               if (classItem.students && Array.isArray(classItem.students)) {
-//                   const studentEntry = classItem.students.find(studentStr => {
-//                       try {
-//                           const student = JSON.parse(studentStr);
-//                           return student.student_id === user.$id;
-//                       } catch (e) {
-//                           console.error('Error parsing student:', e);
-//                           return false;
-//                       }
-//                   });
-
-//                   if (studentEntry) {
-//                       try {
-//                           const parsedStudent = JSON.parse(studentEntry);
-//                           statusObj[classItem.class_id] = parsedStudent.status;
-//                       } catch (e) {
-//                           console.error('Error parsing student entry:', e);
-//                       }
-//                   }
-//               }
-//           });
-          
-//           // console.log('Setting enrollment status:', statusObj);
-//           setEnrollmentStatus(statusObj);
-//       }
-//   } catch (error) {
-//       console.error('Error loading data:', error);
-//       Alert.alert('Error', 'Failed to load data');
-//   } finally {
-//       setIsLoading(false);
-//   }
-// };
-
-
-//   const handleCreateClass = async () => {
-//     // console.log('Starting handleCreateClass');
-//     if (!className.trim()) {
-//       Alert.alert('Error', 'Please enter a class name');
-//       return;
-//     }
-  
-//     try {
-//       setIsSubmitting(true);
-//       console.log('Creating class with name:', className);
-      
-//       const newClass = await createClass(className);
-//       console.log('Class created:', newClass);
-      
-//       setClassName('');
-//       setShowForm(false);
-      
-//       console.log('Reloading classes...');
-//       await loadUserAndClasses();
-      
-//       Alert.alert('Success', 'Class created successfully');
-//     } catch (error) {
-//       console.error('Error creating class:', error);
-//       Alert.alert('Error', 'Failed to create class');
-//     } finally {
-//       setIsSubmitting(false);
-//     }
-//   };
 
 const loadUserAndClasses = async () => {
   try {
@@ -161,6 +80,10 @@ const loadUserAndClasses = async () => {
   } finally {
     setIsLoading(false);
   }
+};
+
+const handleMapPress = () => {
+  router.push('/map');
 };
 
 // Make sure handleCreateClass also forces a refresh
@@ -288,6 +211,7 @@ const handleCreateClass = async () => {
   return (
     <SafeAreaView className="bg-primary h-full">
       <ScrollView>
+        
         <View className='px-4 my-6'>
           <View className="flex-row justify-between items-center mb-8">
             <Text className='text-2xl text-white font-semibold'>My Classes</Text>
@@ -337,6 +261,17 @@ const handleCreateClass = async () => {
           )}
         </View>
       </ScrollView>
+
+
+      {/* Add Map Button at bottom */}
+      <View className="absolute bottom-4 left-0 right-0 px-4">
+        <CustomButton 
+          title="View Classes on Map" 
+          handlePress={handleMapPress}
+          containerStyle="bg-secondary"
+        />
+      </View>
+      
     </SafeAreaView>
   )
 }

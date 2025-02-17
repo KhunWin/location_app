@@ -23,7 +23,38 @@ const Map = () => {
   const loadClasses = async () => {
     try {
       const allClasses = await getUserClasses();
-      setClasses(allClasses);
+      console.log('Retrieved classes:', allClasses);
+  
+      // Process classes to extract locations
+      const classesWithLocations = allClasses.map(classItem => {
+        let location = null;
+        if (classItem.class_location && classItem.class_location[0]) {
+          try {
+            location = JSON.parse(classItem.class_location[0]);
+            console.log(`Parsed location for class ${classItem.class_name}:`, location);
+          } catch (error) {
+            console.error(`Error parsing location for class ${classItem.class_name}:`, error);
+          }
+        }
+        return {
+          ...classItem,
+          parsedLocation: location
+        };
+      });
+  
+      console.log('Processed classes with locations:', classesWithLocations);
+      setClasses(classesWithLocations);
+  
+      // If there are classes with locations, center the map on the first one
+      const firstClassWithLocation = classesWithLocations.find(c => c.parsedLocation);
+      if (firstClassWithLocation?.parsedLocation) {
+        setRegion({
+          latitude: firstClassWithLocation.parsedLocation.latitude,
+          longitude: firstClassWithLocation.parsedLocation.longitude,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        });
+      }
     } catch (error) {
       console.error('Error loading classes:', error);
     }
@@ -64,16 +95,19 @@ const Map = () => {
           />
 
           {/* Class markers */}
+          {/* Update the Marker section in the MapView */}
           {classes.map((classItem) => (
-            <Marker
-              key={classItem.$id}
-              coordinate={{
-                latitude: classItem.location?.latitude || region.latitude,
-                longitude: classItem.location?.longitude || region.longitude,
-              }}
-              title={classItem.class_name}
-              description={`Files: ${classItem.files?.length || 0}`}
-            />
+            classItem.parsedLocation && (
+              <Marker
+                key={classItem.$id}
+                coordinate={{
+                  latitude: classItem.parsedLocation.latitude,
+                  longitude: classItem.parsedLocation.longitude,
+                }}
+                title={classItem.class_name}
+                description={`Class ID: ${classItem.class_id}`}
+              />
+            )
           ))}
         </MapView>
 
@@ -118,10 +152,11 @@ const styles = StyleSheet.create({
   sliderContainer: {
     padding: 20,
     backgroundColor: 'white',
+    marginTop: -10, 
   },
   sliderLabel: {
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: -10,
   },
   slider: {
     width: '100%',
