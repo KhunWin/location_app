@@ -148,6 +148,8 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams } from 'expo-router'
 import { getClassStudents, approveStudent, removeStudent } from '../../lib/appwrite'
 import { MaterialIcons } from '@expo/vector-icons'
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 
 const ViewAttendance = () => {
     const { classId, className } = useLocalSearchParams()
@@ -250,6 +252,62 @@ const ViewAttendance = () => {
         )
     }
 
+    // Replace the generatePDF function with this:
+    const generatePDF = async () => {
+        try {
+            const currentDate = new Date().toISOString().split('T')[0];
+            const fileName = `students_list_${className}_${currentDate}.pdf`;
+    
+            const htmlContent = `
+                <html>
+                    <head>
+                        <style>
+                            table { width: 100%; border-collapse: collapse; }
+                            th, td { border: 1px solid black; padding: 8px; text-align: left; }
+                            th { background-color: #f2f2f2; }
+                        </style>
+                    </head>
+                    <body>
+                        <h1>Student List - ${className}</h1>
+                        <p>Generated on: ${currentDate}</p>
+                        <table>
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Joined Date</th>
+                            </tr>
+                            ${students.map(student => `
+                                <tr>
+                                    <td>${formatStudentId(student.$id)}</td>
+                                    <td>${student.username}</td>
+                                    <td>${student.email}</td>
+                                    <td>${student.status}</td>
+                                    <td>${new Date(student.joined_date).toLocaleDateString()}</td>
+                                </tr>
+                            `).join('')}
+                        </table>
+                    </body>
+                </html>
+            `;
+    
+            const { uri } = await Print.printToFileAsync({
+                html: htmlContent,
+                base64: false
+            });
+    
+            await Sharing.shareAsync(uri, {
+                UTI: '.pdf',
+                mimeType: 'application/pdf'
+            });
+    
+            Alert.alert('Success', 'PDF has been generated and saved!');
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            Alert.alert('Error', 'Failed to generate PDF');
+        }
+    };
 
     return (
         <SafeAreaView className="bg-primary h-full">
@@ -337,12 +395,22 @@ const ViewAttendance = () => {
                                     No students found in this class.
                                 </Text>
                             )}
+
+                        {/* Download button at the bottom */}
+                        <View className="mt-6 items-center">
+                            <TouchableOpacity 
+                                className="bg-blue-500 px-6 py-3 rounded"
+                                onPress={generatePDF}
+                            >
+                                <Text className="text-white font-medium">Download PDF</Text>
+                            </TouchableOpacity>
                         </View>
-                    )}
-                </View>
-            </ScrollView>
-        </SafeAreaView>
-    )
+                    </View>
+                )}
+            </View>
+        </ScrollView>
+    </SafeAreaView>
+)
 }
 
 export default ViewAttendance

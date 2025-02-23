@@ -15,6 +15,7 @@ import list from "../assets/icons/list.png";
 import list1 from "../assets/icons/list-1.png";
 import record from "../assets/icons/attendance-record.png";
 import checkin from "../assets/icons/check-mark.png";
+import report from "../assets/icons/report.png";
 
 export default {
   play,
@@ -34,5 +35,5 @@ export default {
   list1,
   record,
   checkin,
-  
+  report,
 };

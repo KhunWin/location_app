@@ -252,9 +252,13 @@ userCollectionId
   ],
   
 
-##comment from mid-point presentation
+##comment from mid-point presentation (add this comment as well)
 - modify the check-in process. rather than typing the code, create a check-in button so that they don't 
 have to enter the code. easier to check-in.
 
+##add report for home page (let the user download their information)
+## add get direction to specific location 
+## add get duration to the class location 
+##
 
 

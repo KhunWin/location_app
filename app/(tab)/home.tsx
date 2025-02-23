@@ -25,15 +25,49 @@ const Home = () => {
   // }, [])
 }, [refresh]); // Add refresh to dependency array
 
+  // const handleClassPress = (classItem) => {
+  //   // Navigate to class details page
+  //   router.push({
+  //     // pathname: `/bookmark`,
+  //     pathname: `/myclass`,
+  //     params: { className: classItem.class_name,
+  //                   classId: classItem.class_id}
+  //   });
+  // };
+
+
   const handleClassPress = (classItem) => {
-    // Navigate to class details page
+    const isStudent = currentUser?.role === 'student';
+    const status = enrollmentStatus[classItem.class_id];
+
+    if (isStudent) {
+      // Only allow enrolled students to view class
+      if (status === 'approved') {
+        router.push({
+          pathname: '/myclass',
+          params: { 
+            className: classItem.class_name,
+            classId: classItem.class_id,
+            studentId: currentUser?.$id,
+            accountId: currentUser?.accountId,
+            student_name: currentUser?.name,
+            email: currentUser?.email
+          }
+        });
+      }
+      // No action for non-enrolled students
+      return;
+    }
+
+    // Teacher view
     router.push({
-      pathname: `/bookmark`,
-      params: { className: classItem.class_name,
-                    classId: classItem.class_id}
+      pathname: '/myclass',
+      params: { 
+        className: classItem.class_name,
+        classId: classItem.class_id
+      }
     });
   };
-
 
 const loadUserAndClasses = async () => {
   try {
@@ -215,7 +249,7 @@ const handleCreateClass = async () => {
         <View className='px-4 my-6'>
           <View className="flex-row justify-between items-center mb-8">
             <Text className='text-2xl text-white font-semibold'>My Classes</Text>
-            {currentUser?.role === 'teacher' && (
+            {/* {currentUser?.role === 'teacher' && (
               <TouchableOpacity 
                 onPress={() => setShowForm(!showForm)}
                 className="bg-secondary px-4 py-2 rounded-lg"
@@ -224,7 +258,18 @@ const handleCreateClass = async () => {
                   {showForm ? 'Cancel' : 'Create Class'}
                 </Text>
               </TouchableOpacity>
-            )}
+
+              
+            )} */}
+
+          <TouchableOpacity 
+              onPress={handleMapPress}
+              className="bg-secondary px-4 py-2 rounded-lg"
+            >
+              <Text className="text-white">View Classes on Map</Text>
+            </TouchableOpacity>
+
+
           </View>
 
           {showForm && currentUser?.role === 'teacher' && (
@@ -264,13 +309,13 @@ const handleCreateClass = async () => {
 
 
       {/* Add Map Button at bottom */}
-      <View className="absolute bottom-4 left-0 right-0 px-4">
+      {/* <View className="absolute bottom-4 left-0 right-0 px-4">
         <CustomButton 
           title="View Classes on Map" 
           handlePress={handleMapPress}
           containerStyle="bg-secondary"
         />
-      </View>
+      </View> */}
       
     </SafeAreaView>
   )

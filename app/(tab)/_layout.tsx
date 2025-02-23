@@ -106,6 +106,7 @@ const TabsLayout = () => {
   const [userRole, setUserRole] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+
   useEffect(() => {
     const fetchUserRole = async () => {
       try {
@@ -128,7 +129,9 @@ const TabsLayout = () => {
 
   return (
     <>
-    <Tabs screenOptions={{
+    <Tabs 
+    initialRouteName="bookmark"
+    screenOptions={{
       tabBarShowLabel: false,
       tabBarActiveTintColor: '#FFA001',
       tabBarInactiveTintColor: '#CDCDE0',
@@ -138,7 +141,7 @@ const TabsLayout = () => {
         height: 84
       }
     }}>
-      <Tabs.Screen name="home" options={{title: 'Home', headerShown: false, tabBarIcon: ({color, focused}) => (
+      <Tabs.Screen name="bookmark" options={{title: 'Home', headerShown: false, tabBarIcon: ({color, focused}) => (
           <TabIcon 
             icon={icons.home}
             color={color}
@@ -147,18 +150,19 @@ const TabsLayout = () => {
           />
       )}}/>
 
-      <Tabs.Screen name="bookmark" options={{title: 'Bookmark', headerShown: false, tabBarIcon: ({color, focused}) => (
+      {/* name = "bookmark", it used to be bookmark*/}
+      <Tabs.Screen name="home" options={{title: 'Bookmark', headerShown: false, tabBarIcon: ({color, focused}) => (
           <TabIcon 
             icon={userRole === 'student' ? icons.checkin : icons.bookmark}
             color={color}
-            name={userRole === 'student' ? "Checkin" : "MyClass"}
+            name={userRole === 'student' ? "AllClass" : "MyClass"}
             focused={focused}
           />
       )}}/>
 
       <Tabs.Screen name="create" options={{title: 'Create', headerShown: false, tabBarIcon: ({color, focused}) => (
           <TabIcon 
-            icon={userRole === 'student' ? icons.bookmark : icons.plus}
+            icon={userRole === 'student' ? icons.bookmark : icons.report}
             color={color}
             name={userRole === 'student' ? "MyClass" :"Create"}
             focused={focused}

@@ -313,6 +313,17 @@ export const getUserClasses = async () => {
                 appwriteConfig.classCollectionId,
                 [Query.equal('created_by', user.$id)]
             );
+
+            // Print each class details
+        classes.documents.forEach(classDoc => {
+            console.log('Class Details:');
+            console.log('- Name:', classDoc.class_name);
+            console.log('- ID:', classDoc.class_id);
+            console.log('- Created by:', classDoc.created_by);
+            console.log('- Number of students:', classDoc.students ? classDoc.students.length : 0);
+            console.log('------------------------');
+        });
+        
             return classes.documents;
         } else if (user.role === 'student') {
             // For students, get all available classes
@@ -322,6 +333,7 @@ export const getUserClasses = async () => {
             );
             return classes.documents;
         }
+
 
         throw new Error('Invalid user role');
     } catch (error) {
@@ -1208,6 +1220,7 @@ export const logoutUser = async () => {
 //     }
 // };
 
+
 // export const listFiles = async () => {
 //     try {
 //         const files = await storage.listFiles(appwriteConfig.storageId);
@@ -1231,10 +1244,111 @@ export const logoutUser = async () => {
 // };
 
 
+//this is working for only teacher role
+// export const listFiles = async (classId: string) => {
+//     try {
+//         // First, create a query to filter files by class_id
+//         const queries = [
+//             Query.equal('class_id', classId)
+//         ];
+
+//         // Get files with the query filter
+//         const files = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.fileCollectionId,
+//             queries
+//         );
+
+//         // Log the raw response
+//         console.log('Raw database response:', files);
+
+//         // Log each file document
+//         files.documents.forEach((file, index) => {
+//             console.log(`File ${index + 1}:`, {
+//                 documentId: file.$id,
+//                 filename: file.filename,
+//                 creator: file.creator,
+//                 classId: file.class_id,
+//                 fileURL: file.fileURL,
+//                 createdAt: file.$createdAt
+//             });
+//         });
+
+//         return files.documents;
+//     } catch (error) {
+//         console.error('Error listing files:', error);
+//         throw error;
+//     }
+// };
+
+// export const listFiles = async (classId: string) => {
+//     try {
+//         // Get current user to check role
+//         const currentUser = await getCurrentUser();
+//         console.log('Checking files for classId:', classId);
+        
+//         // For students, verify enrollment first
+//         if (currentUser.role === 'student') {
+//             const joinedClasses = parseJoinedClasses(currentUser.joined_classes);
+//             console.log('Student joined classes:', joinedClasses);
+            
+//             // Find the matching class using base class ID
+//             const enrollment = joinedClasses.find(cls => {
+//                 const baseClassId = classId.split('000')[0];
+//                 const baseJoinedClassId = cls.class_id.split('000')[0];
+//                 console.log('Comparing:', baseJoinedClassId, 'with:', baseClassId);
+//                 return baseJoinedClassId === baseClassId;
+//             });
+            
+//             if (!enrollment || enrollment.status !== 'approved') {
+//                 console.log('Student not approved for this class');
+//                 return [];
+//             }
+//         }
+
+//         // Create base query to filter files by class_id
+//         const baseClassId = classId.split('000')[0];
+//         const queries = [
+//             Query.equal('class_id', baseClassId + '000' + classId.split('000')[1]?.split('c')[0] || '')
+//         ];
+
+//         // Get files with the query filter
+//         const files = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.fileCollectionId,
+//             queries
+//         );
+
+//         console.log('Files query result:', files);
+
+//         return files.documents;
+//     } catch (error) {
+//         console.error('Error listing files:', error);
+//         throw error;
+//     }
+// };
 
 export const listFiles = async (classId: string) => {
     try {
-        // First, create a query to filter files by class_id
+        // Get current user to check role
+        const currentUser = await getCurrentUser();
+        console.log('Checking files for classId:', classId);
+        
+        // For students, verify enrollment first
+        if (currentUser.role === 'student') {
+            const joinedClasses = parseJoinedClasses(currentUser.joined_classes);
+            console.log('Student joined classes:', joinedClasses);
+            
+            // Find the matching class using exact class ID
+            const enrollment = joinedClasses.find(cls => cls.class_id === classId);
+            
+            if (!enrollment || enrollment.status !== 'approved') {
+                console.log('Student not approved for this class');
+                return [];
+            }
+        }
+
+        // Create query to filter files by exact class_id
         const queries = [
             Query.equal('class_id', classId)
         ];
@@ -1246,20 +1360,7 @@ export const listFiles = async (classId: string) => {
             queries
         );
 
-        // Log the raw response
-        console.log('Raw database response:', files);
-
-        // Log each file document
-        files.documents.forEach((file, index) => {
-            console.log(`File ${index + 1}:`, {
-                documentId: file.$id,
-                filename: file.filename,
-                creator: file.creator,
-                classId: file.class_id,
-                fileURL: file.fileURL,
-                createdAt: file.$createdAt
-            });
-        });
+        // console.log('Files query result:', files);
 
         return files.documents;
     } catch (error) {
@@ -1321,6 +1422,56 @@ export const uploadFile = async (fileData) => {
 
     } catch (error) {
         console.error('Error uploading file:', error);
+        throw error;
+    }
+};
+
+//for students to extract all attendace_days
+// Add this new function after your other export functions
+export const getClassAttendanceDaysForStudent = async (classId) => {
+    try {
+        console.log('\n=== Starting getClassAttendanceDaysForStudent ===');
+        console.log('Fetching attendance days for class:', classId);
+
+        // Get class document
+        const classDocuments = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.classCollectionId,
+            [Query.equal('class_id', classId)]
+        );
+
+        if (!classDocuments.documents.length) {
+            console.log('No class found with ID:', classId);
+            return [];
+        }
+
+        const classDoc = classDocuments.documents[0];
+        console.log('Raw class document:', classDoc);
+
+        // Check if attendance_days exists and is an array
+        if (!classDoc.attendance_days || !Array.isArray(classDoc.attendance_days)) {
+            console.log('No attendance days found or invalid format');
+            return [];
+        }
+
+        // Parse attendance days
+        const parsedAttendanceDays = classDoc.attendance_days.map(day => {
+            try {
+                console.log('Processing attendance day:', day);
+                const parsed = typeof day === 'string' ? JSON.parse(day) : day;
+                console.log('Successfully parsed day:', parsed);
+                return parsed;
+            } catch (error) {
+                console.error('Error parsing attendance day:', error);
+                return null;
+            }
+        }).filter(Boolean);
+
+        console.log('Final processed attendance days:', parsedAttendanceDays);
+        return parsedAttendanceDays;
+
+    } catch (error) {
+        console.error('Error in getClassAttendanceDaysForStudent:', error);
         throw error;
     }
 };
