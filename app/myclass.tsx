@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import CustomButton from '@/components/CustomButton'
 import FormField from '@/components/FormField'
 import { useLocalSearchParams, router } from 'expo-router'
-import { getCurrentUser, submitAttendance, parseJoinedClasses, listFiles, getClassAttendanceDaysForStudent } from '../lib/appwrite'
+import { getClassAddress, getCurrentUser, submitAttendance, parseJoinedClasses, listFiles, getClassAttendanceDaysForStudent } from '../lib/appwrite'
 import * as Location from 'expo-location'
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -17,23 +17,76 @@ const MyClass = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [files, setFiles] = useState([]);
-
     const [attendanceDays, setAttendanceDays] = useState([]);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [classAddress, setClassAddress] = useState(null);
+    const [classDetails, setClassDetails] = useState(null);
 
-    // Add this after your other useEffect hooks
+
+
+
+    // // Add this after your other useEffect hooks
+    // useEffect(() => {
+    //     const loadAttendanceData = async () => {
+    //         try {
+    //             const attendanceData = await getClassAttendanceDaysForStudent(classId);
+    //             console.log("attendanceData:", attendanceData)
+                
+    //             setAttendanceDays(attendanceData);
+    //         } catch (error) {
+    //             console.error('Error loading attendance data:', error);
+    //             Alert.alert('Error', 'Failed to load attendance data');
+    //         }
+    //     };
+
+    //     if (classId && currentUser) {
+    //         loadAttendanceData();
+    //     }
+    // }, [classId, currentUser]);
+
+    // useEffect(() => {
+    //     const loadClassAddress = async () => {
+    //         try {
+    //             const address = await getClassAddress(classId);
+    //             setClassAddress(address);
+    //         } catch (error) {
+    //             console.error('Error loading class address:', error);
+    //         }
+    //     };
+    
+    //     if (classId) {
+    //         loadClassAddress();
+    //     }
+    // }, [classId]);
+
     useEffect(() => {
-        const loadAttendanceData = async () => {
+        const loadClassData = async () => {
             try {
-                const attendanceData = await getClassAttendanceDaysForStudent(classId);
-                setAttendanceDays(attendanceData);
+                // Load attendance data if user is available
+                if (currentUser) {
+                    const attendanceData = await getClassAttendanceDaysForStudent(classId);
+                    console.log("attendanceData:", attendanceData);
+                    setAttendanceDays(attendanceData);
+                }
+
+                // // Load class address
+                // const address = await getClassAddress(classId);
+                // setClassAddress(address);
+                // Load class address and schedule
+                const classDetails = await getClassAddress(classId);
+                if (classDetails) {
+                    setClassAddress(classDetails.address);
+                    setClassDetails(classDetails); // This will contain both address and schedule
+                }
+
             } catch (error) {
-                console.error('Error loading attendance data:', error);
-                Alert.alert('Error', 'Failed to load attendance data');
+                console.error('Error loading class data:', error);
+                Alert.alert('Error', 'Failed to load class data');
             }
         };
 
-        if (classId && currentUser) {
-            loadAttendanceData();
+        if (classId) {
+            loadClassData();
         }
     }, [classId, currentUser]);
 
@@ -251,15 +304,45 @@ const MyClass = () => {
         }
     };
 
-    const handleCheckIn = async () => {
+    // const refreshAttendanceData = async () => {
+    //     try {
+    //         const attendanceData = await getClassAttendanceDaysForStudent(classId);
+    //         setAttendanceDays(attendanceData);
+    //     } catch (error) {
+    //         console.error('Error refreshing attendance data:', error);
+    //         // Optionally show an alert if refresh fails
+    //         Alert.alert('Error', 'Failed to refresh attendance data');
+    //     }
+    // };
+
+    // Modify the refreshAttendanceData function to use the loading state
+    const refreshAttendanceData = async () => {
+        setIsRefreshing(true);
+        try {
+            const attendanceData = await getClassAttendanceDaysForStudent(classId);
+            setAttendanceDays(attendanceData);
+        } catch (error) {
+            console.error('Error refreshing attendance data:', error);
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
+
+    const handleCheckIn = async (skipCodeCheck = false, dayData = null) => {
         if (!currentUser) {
-            console.error('No user data available');
+            // console.error('No user data available');
             Alert.alert('Error', 'Please wait for user data to load');
             return;
         }
 
-        // Skip attendance code check if code was set from button click
-        if (!attendanceCode.trim()) {
+        // // Skip attendance code check if code was set from button click
+        // if (!attendanceCode.trim()) {
+        //     Alert.alert('Error', 'Please enter an attendance code');
+        //     return;
+        // }
+
+        // Only check attendance code if not skipping code check
+        if (!skipCodeCheck && !attendanceCode.trim()) {
             Alert.alert('Error', 'Please enter an attendance code');
             return;
         }
@@ -289,7 +372,9 @@ const MyClass = () => {
             // Submit attendance
             const result = await submitAttendance(
                 classId,
-                attendanceCode.trim(),
+                // attendanceCode.trim(),
+                skipCodeCheck ? dayData.attendance_code : attendanceCode.trim(), // Use the session's code if skipping check
+
                 currentUser.$id,
                 userLocation,
                 currentUser
@@ -303,7 +388,12 @@ const MyClass = () => {
                     '')
             );
 
-            setAttendanceCode('');
+            // setAttendanceCode('');
+            if (!skipCodeCheck) {
+                setAttendanceCode('');
+            }
+            // Refresh the attendance data after successful submission
+            await refreshAttendanceData();
 
         } catch (error) {
             console.error('Check-in error:', error);
@@ -368,6 +458,31 @@ const MyClass = () => {
                 <Text className='text-2xl text-white font-psemibold mb-4 text-center mt-2'>
                     {className || 'Class Name'}
                 </Text>
+
+                {/* Class Address Section */}
+                {classAddress && (
+                    <View className="mb-4">
+                        <Text className="text-white text-lg mb-2">Class Address</Text>
+                        <Text className="text-gray-300">
+                            {`Floor: ${classAddress.floor}, Room: ${classAddress.room}, Building: ${classAddress.building}, Street: ${classAddress.street}`}
+                        </Text>
+                    </View>
+                )}
+
+                {classDetails?.schedule && (
+                        <View className="mb-4">
+                            <Text className="text-white text-lg mb-2">Class Schedule</Text>
+                            {Object.entries(classDetails.schedule).map(([day, time]) => (
+                                time && (
+                                    <Text key={day} className="text-gray-300">
+                                        {day}: {time}
+                                    </Text>
+                                )
+                            ))}
+                        </View>
+                    )}
+                {/* Attendance Section */}      
+
 
                 {/* Files Section - Visible to both teachers and students */}
                 <View className="flex-1 mb-1">
@@ -460,13 +575,15 @@ const MyClass = () => {
                                                     <TouchableOpacity
                                                         onPress={() => {
                                                             setAttendanceCode(dayData.attendance_code);
-                                                            handleCheckIn();
+                                                            handleCheckIn(true, dayData);
                                                         }}
                                                         className="bg-secondary rounded-lg py-1 px-2"
+                                                        disabled={isSubmitting}
                                                     >
                                                         <Text className="text-white text-center">
                                                             {record?.status === 'absent' ? 'Try Again' : 'Check-in'}
                                                         </Text>
+
                                                     </TouchableOpacity>
                                                 )}
                                             </View>

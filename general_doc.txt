@@ -53,7 +53,13 @@ classCollectionId
      "latitude": 37.7749,
       "longitude": -122.4194 
     }
-  ]
+  ],
+  "class_address" : [
+    {"room":"16", "floor":5, "building":"AAB", "street": "5 Baptist University Road"}
+  ],
+  "class_schedule" : [
+    {"Monday":"8-11", "Tuesday":"14-16"}
+  ],
   "students": [                 // List of students who joined the class
     {
       "student_id": "<student_id>",

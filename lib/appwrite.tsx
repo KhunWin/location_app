@@ -177,7 +177,7 @@ export const getCurrentUser = async () => {
         }
 
         const userDoc = currentUser.documents[0];
-        console.log('Returning user document:', userDoc);
+        // console.log('Returning user document:', userDoc);
         return userDoc;
 
     } catch (error) {
@@ -189,14 +189,21 @@ export const getCurrentUser = async () => {
 
 //creating a class
 
-//without location data
-// export const createClass = async (className) => {
+//with location data
+// export const createClass = async (className, location) => {
 //     try {
-//         // Debug: Check if we have a current session
+//         console.log('createClass function received:', {
+//             className,
+//             location
+//         });
+
+//         // Get location coordinates
+//         const locationCoords = await getLocationCoordinates();
+//         console.log('Location coordinates for class:', locationCoords);
+
 //         const session = await account.getSession('current');
 //         if (!session) throw new Error('Not authenticated');
 
-//         // Get user details from users collection
 //         const users = await databases.listDocuments(
 //             appwriteConfig.databaseId,
 //             appwriteConfig.userCollectionId,
@@ -207,18 +214,18 @@ export const getCurrentUser = async () => {
 
 //         if (!users.documents.length) throw new Error('User not found');
 //         const user = users.documents[0];
-//         // Debug: Log class document being created
+
 //         const classData = {
 //             class_id: ID.unique(),
 //             class_name: className,
 //             created_by: user.$id,
+//             class_location: [JSON.stringify(locationCoords)],
 //             students: [],
 //             attendance_days: []
 //         };
-//         // console.log('Attempting to create class with data:', JSON.stringify(classData, null, 2));
 
+//         console.log('Attempting to create class with data:', classData);
 
-//         // Create new class document
 //         const newClass = await databases.createDocument(
 //             appwriteConfig.databaseId,
 //             appwriteConfig.classCollectionId,
@@ -226,19 +233,23 @@ export const getCurrentUser = async () => {
 //             classData
 //         );
 
+//         console.log('Class created successfully:', newClass);
 //         return newClass;
 
 //     } catch (error) {
+//         console.error('Error in createClass:', error);
 //         throw error;
 //     }
-// }
+// };
 
-//with location data
-export const createClass = async (className, location) => {
+//with update class address
+export const createClass = async (className, location, address, schedule) => {
     try {
         console.log('createClass function received:', {
             className,
-            location
+            location,
+            address,
+            schedule
         });
 
         // Get location coordinates
@@ -263,8 +274,9 @@ export const createClass = async (className, location) => {
             class_id: ID.unique(),
             class_name: className,
             created_by: user.$id,
-            // class_location: [locationCoords], // Use the obtained location
             class_location: [JSON.stringify(locationCoords)],
+            class_address: [JSON.stringify(address)],
+            class_schedule: [JSON.stringify(schedule)], 
             students: [],
             attendance_days: []
         };
@@ -787,6 +799,8 @@ export const getClassSessions = async (classId: string) => {
             }
         }).filter(session => session !== null);
 
+        console.log("Class sessions:", sessions)
+
         return sessions;
     } catch (error) {
         console.error('=== Error in getClassSessions ===');
@@ -1037,6 +1051,7 @@ export const findAttendanceSession = async (classId, attendanceCode, studentId, 
         const session = attendanceDays.find(
             day => day.attendance_code === attendanceCode
         );
+        // const session = attendanceDays[attendanceDays.length - 1];
 
         console.log('Found attendance session:', session);
 
@@ -1045,6 +1060,7 @@ export const findAttendanceSession = async (classId, attendanceCode, studentId, 
         }
 
         return { classDoc, session };
+        // return { classDoc};
     } catch (error) {
         console.error('Error finding attendance session:', error);
         throw error;
@@ -1125,14 +1141,14 @@ export const updateAttendanceRecord = async (classDoc, session, studentId, statu
 };
 
 // Update submitAttendance function
-export const submitAttendance = async (classId, attendanceCode, studentId, location, currentUser) => {
+export const submitAttendance = async (classId, attendanceCode,studentId, location, currentUser) => {
     try {
-        console.log('Starting attendance submission:', {
-            classId,
-            attendanceCode,
-            studentId,
-            location
-        });
+        // console.log('Starting attendance submission:', {
+        //     classId,
+        //     attendanceCode,
+        //     studentId,
+        //     location
+        // });
 
         // Find attendance session and verify enrollment
         const { classDoc, session } = await findAttendanceSession(
@@ -1446,7 +1462,7 @@ export const getClassAttendanceDaysForStudent = async (classId) => {
         }
 
         const classDoc = classDocuments.documents[0];
-        console.log('Raw class document:', classDoc);
+        // console.log('Raw class document:', classDoc);
 
         // Check if attendance_days exists and is an array
         if (!classDoc.attendance_days || !Array.isArray(classDoc.attendance_days)) {
@@ -1457,9 +1473,9 @@ export const getClassAttendanceDaysForStudent = async (classId) => {
         // Parse attendance days
         const parsedAttendanceDays = classDoc.attendance_days.map(day => {
             try {
-                console.log('Processing attendance day:', day);
+                // console.log('Processing attendance day:', day);
                 const parsed = typeof day === 'string' ? JSON.parse(day) : day;
-                console.log('Successfully parsed day:', parsed);
+                // console.log('Successfully parsed day:', parsed);
                 return parsed;
             } catch (error) {
                 console.error('Error parsing attendance day:', error);
@@ -1467,7 +1483,7 @@ export const getClassAttendanceDaysForStudent = async (classId) => {
             }
         }).filter(Boolean);
 
-        console.log('Final processed attendance days:', parsedAttendanceDays);
+        // console.log('Final processed attendance days:', parsedAttendanceDays);
         return parsedAttendanceDays;
 
     } catch (error) {
@@ -1475,4 +1491,58 @@ export const getClassAttendanceDaysForStudent = async (classId) => {
         throw error;
     }
 };
+
+// Add this new function after getClassAttendanceDaysForStudent
+// export const getClassAddress = async (classId) => {
+//     try {
+//         const classDocuments = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.classCollectionId,
+//             [Query.equal('class_id', classId)]
+//         );
+
+//         if (!classDocuments.documents.length) {
+//             return null;
+//         }
+
+//         const classDoc = classDocuments.documents[0];
+//         if (!classDoc.class_address || !classDoc.class_address[0]) {
+//             return null;
+//         }
+
+//         return JSON.parse(classDoc.class_address[0]);
+//     } catch (error) {
+//         console.error('Error getting class address:', error);
+//         return null;
+//     }
+// };
+
+export const getClassAddress = async (classId) => {
+    try {
+        const classDocuments = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.classCollectionId,
+            [Query.equal('class_id', classId)]
+        );
+
+        if (!classDocuments.documents.length) {
+            return null;
+        }
+
+        const classDoc = classDocuments.documents[0];
+        console.log("classDoc", classDoc)
+        const address = classDoc.class_address && classDoc.class_address[0] ? 
+            JSON.parse(classDoc.class_address[0]) : null;
+        const schedule = classDoc.class_schedule && classDoc.class_schedule[0] ? 
+            JSON.parse(classDoc.class_schedule[0]) : null;
+        
+        console.log("shecudle",schedule)
+        return {address,schedule};
+        
+    } catch (error) {
+        console.error('Error getting class details:', error);
+        return null;
+    }
+};
+
 

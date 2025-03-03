@@ -18,6 +18,27 @@ const Create = () => {
   const itemWidth = (screenWidth - 48) / 2
   const [isUploading, setIsUploading] = useState(false);
 
+  // Add new state for address fields
+  const [room, setRoom] = useState('');
+  const [floor, setFloor] = useState('');
+  const [building, setBuilding] = useState('');
+  const [street, setStreet] = useState('');
+
+  const [schedule, setSchedule] = useState({
+    Monday: '',
+    Tuesday: '',
+    Wednesday: '',
+    Thursday: '',
+    Friday: ''
+  });
+
+  // Add handleScheduleChange function
+  const handleScheduleChange = (day, value) => {
+    setSchedule(prev => ({
+        ...prev,
+        [day]: value
+    }));
+  };
 
   useEffect(() => {
     loadUserAndClasses();
@@ -69,12 +90,70 @@ const Create = () => {
     }
   };
 
+  // const handleCreateClass = async () => {
+  //     if (!className.trim()) {
+  //       Alert.alert('Error', 'Please enter a class name');
+  //       return;
+  //     }
+
+  //     try {
+  //       setIsSubmitting(true);
+        
+  //       // Get current location
+  //       let { status } = await Location.requestForegroundPermissionsAsync();
+  //       if (status !== 'granted') {
+  //         Alert.alert('Permission denied', 'Location permission is required');
+  //         return;
+  //       }
+
+  //       const location = await Location.getCurrentPositionAsync({});
+  //       const locationCoords = {
+  //         latitude: location.coords.latitude,
+  //         longitude: location.coords.longitude
+  //       };
+        
+  //       console.log('Creating class with name and location:', {
+  //         className,
+  //         location: locationCoords
+  //       });
+        
+  //       const newClass = await createClass(className, locationCoords);
+  //       console.log('Class created:', newClass);
+        
+  //       setClassName('');
+        
+  //       router.push({
+  //         pathname: '/home',
+  //         params: { refresh: Date.now() }
+  //       });
+        
+  //       Alert.alert('Success', 'Class created successfully');
+  //     } catch (error) {
+  //       console.error('Error creating class:', error);
+  //       Alert.alert('Error', 'Failed to create class');
+  //     } finally {
+  //       setIsSubmitting(false);
+  //     }
+  // };
+
   const handleCreateClass = async () => {
     if (!className.trim()) {
       Alert.alert('Error', 'Please enter a class name');
       return;
     }
 
+    // // Validate address fields
+    // if (!room || !floor || !building || !street) {
+    //   Alert.alert('Error', 'Please fill in all address fields');
+    //   return;
+    // }
+
+    // Validate at least one schedule entry
+    const hasSchedule = Object.values(schedule).some(time => time.trim() !== '');
+    if (!hasSchedule) {
+        Alert.alert('Error', 'Please enter at least one class schedule');
+        return;
+    }
     try {
       setIsSubmitting(true);
       
@@ -90,16 +169,42 @@ const Create = () => {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude
       };
+
+      // Create address object
+      const addressData = {
+        room,
+        floor,
+        building,
+        street
+      };
       
-      console.log('Creating class with name and location:', {
+      console.log('Creating class with name, location and address:', {
         className,
-        location: locationCoords
+        location: locationCoords,
+        address: addressData
       });
+
+      // Filter out empty schedule entries
+      const cleanSchedule = Object.fromEntries(
+        Object.entries(schedule).filter(([_, value]) => value.trim() !== '')
+    );
       
-      const newClass = await createClass(className, locationCoords);
+      const newClass = await createClass(className, locationCoords, addressData,cleanSchedule);
       console.log('Class created:', newClass);
       
+      // Clear all form fields
       setClassName('');
+      setRoom('');
+      setFloor('');
+      setBuilding('');
+      setStreet('');
+      setSchedule({
+        Monday: '',
+        Tuesday: '',
+        Wednesday: '',
+        Thursday: '',
+        Friday: ''
+      });
       
       router.push({
         pathname: '/home',
@@ -153,6 +258,7 @@ const Create = () => {
   const handleUploadPress = () => {
     router.push('/fileupload');
   };
+
   if (isLoading) {
     return (
       <SafeAreaView className="bg-primary h-full">
@@ -188,7 +294,7 @@ const Create = () => {
     );
   }
 
-  console.log('Rendering teacher view');
+  // console.log('Rendering teacher view');
   return (
     <SafeAreaView className="bg-primary h-full">
       <ScrollView>
@@ -204,12 +310,56 @@ const Create = () => {
             placeholder="Enter class name"
           />
 
-          <CustomButton 
-            title="Create Class" 
-            handlePress={handleCreateClass}
-            containerStyle="mt-7" 
-            isLoading={isSubmitting}
+          {/* Add address fields */}
+          <FormField
+            title="Room Number"
+            value={room}
+            handleChangeText={setRoom}
+            placeholder="Enter room number"
           />
+
+          <FormField
+            title="Floor"
+            value={floor}
+            handleChangeText={setFloor}
+            placeholder="Enter floor number"
+            keyboardType="numeric"
+          />
+
+          <FormField
+            title="Building"
+            value={building}
+            handleChangeText={setBuilding}
+            placeholder="Enter building name"
+          />
+
+          <FormField
+            title="Street"
+            value={street}
+            handleChangeText={setStreet}
+            placeholder="Enter street address"
+          />
+
+          {/* date and time */}
+          <Text className="text-white text-lg mb-2">Class Schedule</Text>
+                          {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day) => (
+                              <FormField
+                                  key={day}
+                                  title={day}
+                                  value={schedule[day]}
+                                  handleChangeText={(value) => handleScheduleChange(day, value)}
+                                  placeholder="Enter time (e.g., 8-11)"
+                              />
+                          ))}
+
+          <View className="mt-4">
+              <CustomButton
+                  title={isSubmitting ? "Creating..." : "Create Class"}
+                  handlePress={handleCreateClass}
+                  isLoading={isSubmitting}
+                  containerStyle="mt-7"
+              />
+          </View>
 
 
         </View>
