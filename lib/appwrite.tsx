@@ -327,14 +327,14 @@ export const getUserClasses = async () => {
             );
 
             // Print each class details
-        classes.documents.forEach(classDoc => {
-            console.log('Class Details:');
-            console.log('- Name:', classDoc.class_name);
-            console.log('- ID:', classDoc.class_id);
-            console.log('- Created by:', classDoc.created_by);
-            console.log('- Number of students:', classDoc.students ? classDoc.students.length : 0);
-            console.log('------------------------');
-        });
+        // classes.documents.forEach(classDoc => {
+        //     console.log('Class Details:');
+        //     console.log('- Name:', classDoc.class_name);
+        //     console.log('- ID:', classDoc.class_id);
+        //     console.log('- Created by:', classDoc.created_by);
+        //     console.log('- Number of students:', classDoc.students ? classDoc.students.length : 0);
+        //     console.log('------------------------');
+        // });
         
             return classes.documents;
         } else if (user.role === 'student') {

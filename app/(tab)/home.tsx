@@ -79,7 +79,7 @@ const loadUserAndClasses = async () => {
 
     // Force fresh data fetch from server
     const userClasses = await getUserClasses(true); // Add a parameter to force cache refresh
-    console.log('Fetched classes:', userClasses);
+    // console.log('Fetched classes:', userClasses);
     setClasses(userClasses);
 
     // Set enrollment status for students
@@ -151,6 +151,44 @@ const handleCreateClass = async () => {
 };
 
 
+  //without class schedule crash detection
+  // const handleEnroll = async (classItem) => {
+  //   console.log('Starting handleEnroll for:', classItem);
+    
+  //   if (!currentUser) {
+  //       console.log('No current user found');
+  //       Alert.alert('Error', 'Please log in first');
+  //       return;
+  //   }
+
+  //   try {
+  //       console.log('Current user:', currentUser);
+  //       const result = await enrollInClass(classItem, currentUser);
+  //       console.log('Enrollment result:', result);
+  //       // Update local enrollment status
+  //       setEnrollmentStatus(prev => {
+  //           const newStatus = {
+  //               ...prev,
+  //               [classItem.class_id]: 'pending'
+  //           };
+  //           console.log('Updated local enrollment status:', newStatus);
+  //           return newStatus;
+  //       });
+
+  //       // Update current user state with new joined_classes
+  //       setCurrentUser(result.userUpdate);
+
+  //       Alert.alert('Success', 'Enrollment request sent');
+        
+  //       // Reload data
+  //       console.log('Reloading data...');
+  //       await loadUserAndClasses();
+        
+  //   } catch (error) {
+  //       console.error('Error in handleEnroll:', error);
+  //       Alert.alert('Error', error.message || 'Failed to enroll in class');
+  //   }
+  // };
 
   const handleEnroll = async (classItem) => {
     console.log('Starting handleEnroll for:', classItem);
@@ -164,7 +202,60 @@ const handleCreateClass = async () => {
     try {
         console.log('Current user:', currentUser);
         
-        // Call the enrollInClass function
+        // Check for schedule conflicts
+        if (currentUser.role === 'student' && classItem.class_schedule && classItem.class_schedule[0]) {
+            const newClassSchedule = JSON.parse(classItem.class_schedule[0]);
+            
+            // Get all enrolled classes with approved status
+            const enrolledClasses = classes.filter(cls => 
+                enrollmentStatus[cls.class_id] === 'approved' && 
+                cls.class_schedule && 
+                cls.class_schedule[0]
+            );
+            
+            // Check for conflicts
+            const conflicts = [];
+            
+            enrolledClasses.forEach(enrolledClass => {
+                const enrolledSchedule = JSON.parse(enrolledClass.class_schedule[0]);
+                
+                // Compare each day's schedule
+                Object.entries(newClassSchedule).forEach(([day, newTimeSlot]) => {
+                    if (!newTimeSlot) return; // Skip empty time slots
+                    
+                    const enrolledTimeSlot = enrolledSchedule[day];
+                    if (!enrolledTimeSlot) return; // No class on this day
+                    
+                    // Parse time ranges (assuming format "HH-HH")
+                    const [newStart, newEnd] = newTimeSlot.split('-').map(Number);
+                    const [enrolledStart, enrolledEnd] = enrolledTimeSlot.split('-').map(Number);
+                    
+                    // Check for overlap
+                    if ((newStart < enrolledEnd && newEnd > enrolledStart)) {
+                        conflicts.push({
+                            className: enrolledClass.class_name,
+                            day,
+                            time: enrolledTimeSlot
+                        });
+                    }
+                });
+            });
+            
+            if (conflicts.length > 0) {
+                const conflictMessages = conflicts.map(c => 
+                    `${c.className} (${c.day}: ${c.time})`
+                ).join('\n');
+                
+                Alert.alert(
+                    'Schedule Conflict',
+                    `You cannot enroll in this class due to schedule conflicts with:\n\n${conflictMessages}`,
+                    [{ text: 'OK' }]
+                );
+                return;
+            }
+        }
+        
+        // Call the enrollInClass function if no conflicts
         const result = await enrollInClass(classItem, currentUser);
         console.log('Enrollment result:', result);
         
@@ -192,6 +283,7 @@ const handleCreateClass = async () => {
         Alert.alert('Error', error.message || 'Failed to enroll in class');
     }
 };
+
   const renderClassItem = (classItem) => {
     const isStudent = currentUser?.role === 'student';
     const status = enrollmentStatus[classItem.class_id];
