@@ -455,7 +455,7 @@ const MyClass = () => {
     return (
         <SafeAreaView className="bg-primary h-full">
             <View className="flex-1 px-4">
-                <Text className='text-2xl text-white font-psemibold mb-4 text-center mt-2'>
+                <Text className='text-2xl text-white font-psemibold mb-10 text-center'>
                     {className || 'Class Name'}
                 </Text>
 
@@ -482,7 +482,6 @@ const MyClass = () => {
                         </View>
                     )}
                 {/* Attendance Section */}      
-
 
                 {/* Files Section - Visible to both teachers and students */}
                 <View className="flex-1 mb-1">

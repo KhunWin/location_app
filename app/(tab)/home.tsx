@@ -79,6 +79,7 @@ const loadUserAndClasses = async () => {
 
     // Force fresh data fetch from server
     const userClasses = await getUserClasses(true); // Add a parameter to force cache refresh
+    console.log('Fetched classes:', userClasses);
     setClasses(userClasses);
 
     // Set enrollment status for students
@@ -194,13 +195,12 @@ const handleCreateClass = async () => {
   const renderClassItem = (classItem) => {
     const isStudent = currentUser?.role === 'student';
     const status = enrollmentStatus[classItem.class_id];
-    // console.log(`Rendering class ${classItem.class_name} with status:`, status);
 
     return (
       <TouchableOpacity 
         key={classItem.$id}
         onPress={() => handleClassPress(classItem)}
-        className="bg-primary rounded-lg overflow-hidden"
+        className="bg-primary rounded-lg overflow-hidden mb-4"
         style={{ width: itemWidth }}
       >
         <Image 
@@ -209,23 +209,41 @@ const handleCreateClass = async () => {
           resizeMode="cover"
         />
         <View className="p-2">
+          {isStudent && (
+            <>
+              {classItem.class_address && classItem.class_address[0] && (
+                <View className="mb-2">
+                  <Text className="text-gray-300 text-sm">
+                    {`Room ${JSON.parse(classItem.class_address[0]).room}, Floor ${JSON.parse(classItem.class_address[0]).floor}, ${JSON.parse(classItem.class_address[0]).building},${JSON.parse(classItem.class_address[0]).street}`}
+                  </Text>
+                </View>
+              )}
+              {classItem.class_schedule && classItem.class_schedule[0] && (
+                <View className="mb-2">
+                  <Text className="text-gray-300 text-sm">
+                    {Object.entries(JSON.parse(classItem.class_schedule[0]))
+                      .filter(([_, time]) => time)
+                      .map(([day, time]) => `${day.slice(0,3)}: ${time}`)
+                      .join(', ')}
+                  </Text>
+                </View>
+              )}
+            </>
+          )}
           <View className="flex-row justify-between items-center">
             <Text className="text-white text-lg flex-1">
               {classItem.class_name}
             </Text>
             {isStudent && (
               status === 'pending' ? (
-                // Non-clickable pending status
                 <View className="bg-yellow-500 px-2 py-1 rounded opacity-70">
                   <Text className="text-white text-sm">Pending</Text>
                 </View>
               ) : status === 'approved' ? (
-                // Non-clickable approved status
                 <View className="bg-green-500 px-2 py-1 rounded opacity-70">
                   <Text className="text-white text-sm">Enrolled</Text>
                 </View>
               ) : (
-                // Clickable enroll button
                 <TouchableOpacity 
                   onPress={() => handleEnroll(classItem)}
                   className="bg-blue-500 px-2 py-1 rounded"
@@ -249,18 +267,6 @@ const handleCreateClass = async () => {
         <View className='px-4 my-6'>
           <View className="flex-row justify-between items-center mb-8">
             <Text className='text-2xl text-white font-semibold'>My Classes</Text>
-            {/* {currentUser?.role === 'teacher' && (
-              <TouchableOpacity 
-                onPress={() => setShowForm(!showForm)}
-                className="bg-secondary px-4 py-2 rounded-lg"
-              >
-                <Text className="text-white">
-                  {showForm ? 'Cancel' : 'Create Class'}
-                </Text>
-              </TouchableOpacity>
-
-              
-            )} */}
 
           <TouchableOpacity 
               onPress={handleMapPress}
@@ -268,8 +274,6 @@ const handleCreateClass = async () => {
             >
               <Text className="text-white">View Classes on Map</Text>
             </TouchableOpacity>
-
-
           </View>
 
           {showForm && currentUser?.role === 'teacher' && (
@@ -306,16 +310,6 @@ const handleCreateClass = async () => {
           )}
         </View>
       </ScrollView>
-
-
-      {/* Add Map Button at bottom */}
-      {/* <View className="absolute bottom-4 left-0 right-0 px-4">
-        <CustomButton 
-          title="View Classes on Map" 
-          handlePress={handleMapPress}
-          containerStyle="bg-secondary"
-        />
-      </View> */}
       
     </SafeAreaView>
   )
