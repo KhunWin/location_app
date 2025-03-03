@@ -29,7 +29,9 @@ const Create = () => {
     Tuesday: '',
     Wednesday: '',
     Thursday: '',
-    Friday: ''
+    Friday: '',
+    Saturday:'',
+    Sunday:''
   });
 
   // Add handleScheduleChange function
@@ -142,12 +144,6 @@ const Create = () => {
       return;
     }
 
-    // // Validate address fields
-    // if (!room || !floor || !building || !street) {
-    //   Alert.alert('Error', 'Please fill in all address fields');
-    //   return;
-    // }
-
     // Validate at least one schedule entry
     const hasSchedule = Object.values(schedule).some(time => time.trim() !== '');
     if (!hasSchedule) {
@@ -203,7 +199,9 @@ const Create = () => {
         Tuesday: '',
         Wednesday: '',
         Thursday: '',
-        Friday: ''
+        Friday: '',
+        Saturday:'',
+        Sunday:''
       });
       
       router.push({

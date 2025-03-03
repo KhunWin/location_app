@@ -5,6 +5,7 @@ import CustomButton from '@/components/CustomButton'
 import FormField from '@/components/FormField'
 import { useLocalSearchParams, router } from 'expo-router'
 import { getClassAddress, getCurrentUser, submitAttendance, parseJoinedClasses, listFiles, getClassAttendanceDaysForStudent } from '../lib/appwrite'
+import { deleteFile } from '../lib/appwrite'
 import * as Location from 'expo-location'
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -22,42 +23,34 @@ const MyClass = () => {
     const [classAddress, setClassAddress] = useState(null);
     const [classDetails, setClassDetails] = useState(null);
 
-
-
-
-    // // Add this after your other useEffect hooks
-    // useEffect(() => {
-    //     const loadAttendanceData = async () => {
-    //         try {
-    //             const attendanceData = await getClassAttendanceDaysForStudent(classId);
-    //             console.log("attendanceData:", attendanceData)
+        // Add this function to refresh all data
+    const refreshAllData = async () => {
+        try {
+            if (currentUser) {
+                const attendanceData = await getClassAttendanceDaysForStudent(classId);
+                setAttendanceDays(attendanceData);
                 
-    //             setAttendanceDays(attendanceData);
-    //         } catch (error) {
-    //             console.error('Error loading attendance data:', error);
-    //             Alert.alert('Error', 'Failed to load attendance data');
-    //         }
-    //     };
-
-    //     if (classId && currentUser) {
-    //         loadAttendanceData();
-    //     }
-    // }, [classId, currentUser]);
-
-    // useEffect(() => {
-    //     const loadClassAddress = async () => {
-    //         try {
-    //             const address = await getClassAddress(classId);
-    //             setClassAddress(address);
-    //         } catch (error) {
-    //             console.error('Error loading class address:', error);
-    //         }
-    //     };
+                const classDetails = await getClassAddress(classId);
+                if (classDetails) {
+                    setClassAddress(classDetails.address);
+                    setClassDetails(classDetails);
+                }
+                
+                await loadFiles();
+            }
+        } catch (error) {
+            console.error('Error refreshing data:', error);
+        }
+    };
     
-    //     if (classId) {
-    //         loadClassAddress();
-    //     }
-    // }, [classId]);
+        // Update the useFocusEffect to use the new refresh function
+        useFocusEffect(
+            React.useCallback(() => {
+                refreshAllData();
+                return () => {};
+            }, [currentUser, classId])
+        );
+
 
     useEffect(() => {
         const loadClassData = async () => {
@@ -90,8 +83,6 @@ const MyClass = () => {
         }
     }, [classId, currentUser]);
 
-
-
     // Add this effect to refresh when screen is focused
     useFocusEffect(
         React.useCallback(() => {
@@ -100,28 +91,24 @@ const MyClass = () => {
                     await loadFiles();
                 }
             };
-
             // Add 1 second delay before refreshing
             const timer = setTimeout(() => {
                 refreshData();
             }, 1000);
-
             return () => clearTimeout(timer);
         }, [currentUser, classId])
     );
 
     useEffect(() => {
         initializeComponent();
-    }, []); // This stays the same
+    }, []);
 
-    // Separate useEffect for loading files when currentUser changes
     // Modify the useEffect to load files for all users
     useEffect(() => {
         if (currentUser) {  // Remove role check
             loadFiles();
         }
     }, [currentUser, classId]);
-
 
     const loadFiles = async () => {
         try {
@@ -304,17 +291,6 @@ const MyClass = () => {
         }
     };
 
-    // const refreshAttendanceData = async () => {
-    //     try {
-    //         const attendanceData = await getClassAttendanceDaysForStudent(classId);
-    //         setAttendanceDays(attendanceData);
-    //     } catch (error) {
-    //         console.error('Error refreshing attendance data:', error);
-    //         // Optionally show an alert if refresh fails
-    //         Alert.alert('Error', 'Failed to refresh attendance data');
-    //     }
-    // };
-
     // Modify the refreshAttendanceData function to use the loading state
     const refreshAttendanceData = async () => {
         setIsRefreshing(true);
@@ -327,7 +303,6 @@ const MyClass = () => {
             setIsRefreshing(false);
         }
     };
-
     const handleCheckIn = async (skipCodeCheck = false, dayData = null) => {
         if (!currentUser) {
             // console.error('No user data available');
@@ -403,6 +378,46 @@ const MyClass = () => {
         }
     };
 
+    // const FileItem = ({ file }) => {
+    //     const handleFilePress = async () => {
+    //         try {
+    //             if (file.fileURL) {
+    //                 console.log('Attempting to open file:', file.fileURL);
+    //                 const canOpen = await Linking.canOpenURL(file.fileURL);
+                    
+    //                 if (canOpen) {
+    //                     await Linking.openURL(file.fileURL);
+    //                     console.log('File opened successfully');
+    //                 } else {
+    //                     console.log('Cannot open URL:', file.fileURL);
+    //                     Alert.alert('Error', 'Cannot open this file type');
+    //                 }
+    //             } else {
+    //                 console.log('No file URL available:', file);
+    //                 Alert.alert('Error', 'File URL not available');
+    //             }
+    //         } catch (error) {
+    //             console.error('Error opening file:', error);
+    //             Alert.alert('Error', 'Failed to open file');
+    //         }
+    //     };
+
+    //     return (
+    //         <TouchableOpacity 
+    //             className="bg-secondary rounded-lg p-3 m-2"
+    //             onPress={handleFilePress}
+    //         >
+    //             <Text className="text-white text-sm" numberOfLines={2}>
+    //                 {file.filename || 'Unnamed file'}
+    //             </Text>
+    //             <Text className="text-gray-400 text-xs mt-1">
+    //                 {new Date(file.$createdAt).toLocaleDateString()}
+    //             </Text>
+    //         </TouchableOpacity>
+    //     );
+    // };
+
+
     const FileItem = ({ file }) => {
         const handleFilePress = async () => {
             try {
@@ -427,20 +442,65 @@ const MyClass = () => {
             }
         };
 
+        const handleDeleteFile = async () => {
+            try {
+                Alert.alert(
+                    "Delete File",
+                    "Are you sure you want to delete this file?",
+                    [
+                        { text: "Cancel", style: "cancel" },
+                        { 
+                            text: "Delete", 
+                            style: "destructive",
+                            onPress: async () => {
+                                try {
+                                    // You'll need to implement this function in your appwrite.js
+                                    await deleteFile(file.$id, classId);
+                                    Alert.alert("Success", "File deleted successfully");
+                                    // Refresh the files list
+                                    loadFiles();
+                                } catch (error) {
+                                    console.error('Error deleting file:', error);
+                                    Alert.alert('Error', 'Failed to delete file');
+                                }
+                            }
+                        }
+                    ]
+                );
+            } catch (error) {
+                console.error('Error in delete dialog:', error);
+                Alert.alert('Error', 'Failed to process delete request');
+            }
+        };
+
         return (
             <TouchableOpacity 
                 className="bg-secondary rounded-lg p-3 m-2"
                 onPress={handleFilePress}
             >
-                <Text className="text-white text-sm" numberOfLines={2}>
-                    {file.filename || 'Unnamed file'}
-                </Text>
-                <Text className="text-gray-400 text-xs mt-1">
-                    {new Date(file.$createdAt).toLocaleDateString()}
-                </Text>
+                <View className="flex-row justify-between items-start">
+                    <View className="flex-1">
+                        <Text className="text-white text-sm" numberOfLines={2}>
+                            {file.filename || 'Unnamed file'}
+                        </Text>
+                        <Text className="text-gray-400 text-xs mt-1">
+                            {new Date(file.$createdAt).toLocaleDateString()}
+                        </Text>
+                    </View>
+                    
+                    {currentUser?.role === 'teacher' && (
+                        <TouchableOpacity 
+                            onPress={handleDeleteFile}
+                            className="bg-red-500 rounded-full w-6 h-6 items-center justify-center"
+                        >
+                            <Text className="text-white text-xs font-bold">X</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
             </TouchableOpacity>
         );
     };
+
 
     if (isLoading) {
         return (
@@ -451,7 +511,6 @@ const MyClass = () => {
             </SafeAreaView>
         );
     }
-
     return (
         <SafeAreaView className="bg-primary h-full">
             <View className="flex-1 px-4">
@@ -468,7 +527,6 @@ const MyClass = () => {
                         </Text>
                     </View>
                 )}
-
                 {classDetails?.schedule && (
                         <View className="mb-4">
                             <Text className="text-white text-lg mb-2">Class Schedule</Text>
@@ -482,7 +540,6 @@ const MyClass = () => {
                         </View>
                     )}
                 {/* Attendance Section */}      
-
                 {/* Files Section - Visible to both teachers and students */}
                 <View className="flex-1 mb-1">
                     <Text className="text-white text-lg mb-2">
@@ -510,7 +567,6 @@ const MyClass = () => {
                         )}
                     </ScrollView>
                 </View>
-
                 {/* Teacher-specific controls */}
                 {currentUser?.role === 'teacher' ? (
                     <View className="gap-2 mb-1">
@@ -528,6 +584,21 @@ const MyClass = () => {
                         />
 
                         <CustomButton 
+                            title='Edit Class Details' 
+                            handlePress={() => router.push({
+                                pathname: '/pages/EditClassDetails',
+                                params: { 
+                                    classId: classId,
+                                    className: className,
+                                    classAddress: JSON.stringify(classAddress),
+                                    classSchedule: JSON.stringify(classDetails?.schedule)
+                                }
+                            })}
+                            containerStyle="bg-secondary py-2"
+                        />
+
+
+                        <CustomButton 
                             title='Upload File' 
                             handlePress={() => router.push({
                                 pathname: '/fileupload',
@@ -537,10 +608,7 @@ const MyClass = () => {
                         />
                     </View>
                 ) : (
-
-
                     /* Student check-in section */
-                   
                     <View className="mt-4 mb-6 gap-4">
                     {/* Attendance Days Table */}
                     <View className="mb-4">
@@ -591,29 +659,8 @@ const MyClass = () => {
                                 })}
                             </View>
                         </ScrollView>
-                        
                     </View>
-
-                    {/* <FormField 
-                        title="Attendance Code"
-                        value={attendanceCode}
-                        handleChangeText={setAttendanceCode}
-                        placeholder="Enter attendance code"
-                    />
-
-                    <CustomButton 
-                        title='Check In' 
-                        handlePress={handleCheckIn}
-                        isLoading={isSubmitting}
-                        containerStyle="bg-secondary"
-                        disabled={!currentUser}
-                    /> */}
                     </View>
-
-
-
-
-
                 )}
             </View>
         </SafeAreaView>

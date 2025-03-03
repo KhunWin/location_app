@@ -1493,30 +1493,6 @@ export const getClassAttendanceDaysForStudent = async (classId) => {
 };
 
 // Add this new function after getClassAttendanceDaysForStudent
-// export const getClassAddress = async (classId) => {
-//     try {
-//         const classDocuments = await databases.listDocuments(
-//             appwriteConfig.databaseId,
-//             appwriteConfig.classCollectionId,
-//             [Query.equal('class_id', classId)]
-//         );
-
-//         if (!classDocuments.documents.length) {
-//             return null;
-//         }
-
-//         const classDoc = classDocuments.documents[0];
-//         if (!classDoc.class_address || !classDoc.class_address[0]) {
-//             return null;
-//         }
-
-//         return JSON.parse(classDoc.class_address[0]);
-//     } catch (error) {
-//         console.error('Error getting class address:', error);
-//         return null;
-//     }
-// };
-
 export const getClassAddress = async (classId) => {
     try {
         const classDocuments = await databases.listDocuments(
@@ -1545,4 +1521,54 @@ export const getClassAddress = async (classId) => {
     }
 };
 
+//updating class details for teacher
+export const updateClassDetails = async (classId, newAddress, newSchedule) => {
+    try {
+        const classDocuments = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.classCollectionId,
+            [Query.equal('class_id', classId)]
+        );
+
+        if (!classDocuments.documents.length) {
+            throw new Error('Class not found');
+        }
+
+        const classDoc = classDocuments.documents[0];
+        
+        const updates = {
+            class_address: [JSON.stringify(newAddress)],
+            class_schedule: [JSON.stringify(newSchedule)]
+        };
+
+        const updatedClass = await databases.updateDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.classCollectionId,
+            classDoc.$id,
+            updates
+        );
+
+        return updatedClass;
+    } catch (error) {
+        console.error('Error updating class details:', error);
+        throw error;
+    }
+};
+
+//to delete files 
+export const deleteFile = async (fileId) => {
+    try {
+        // Delete file metadata from database
+        await databases.deleteDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.fileCollectionId,
+            fileId
+        );
+
+        return true;
+    } catch (error) {
+        console.error('Error deleting file:', error);
+        throw error;
+    }
+};
 
