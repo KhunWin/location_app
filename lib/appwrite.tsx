@@ -243,7 +243,7 @@ export const getCurrentUser = async () => {
 // };
 
 //with update class address
-export const createClass = async (className, location, address, schedule) => {
+export const createClass = async (className, location, address, schedule,classSize) => {
     try {
         console.log('createClass function received:', {
             className,
@@ -278,7 +278,8 @@ export const createClass = async (className, location, address, schedule) => {
             class_address: [JSON.stringify(address)],
             class_schedule: [JSON.stringify(schedule)], 
             students: [],
-            attendance_days: []
+            attendance_days: [],
+            class_size: classSize
         };
 
         console.log('Attempting to create class with data:', classData);
@@ -345,8 +346,6 @@ export const getUserClasses = async () => {
             );
             return classes.documents;
         }
-
-
         throw new Error('Invalid user role');
     } catch (error) {
         console.error('Error fetching classes:', error);
@@ -1492,7 +1491,7 @@ export const getClassAttendanceDaysForStudent = async (classId) => {
     }
 };
 
-// Add this new function after getClassAttendanceDaysForStudent
+// Add this new function after getClassAttendanceDaysForStudent..this one also have the class information
 export const getClassAddress = async (classId) => {
     try {
         const classDocuments = await databases.listDocuments(
@@ -1506,14 +1505,15 @@ export const getClassAddress = async (classId) => {
         }
 
         const classDoc = classDocuments.documents[0];
-        console.log("classDoc", classDoc)
+        console.log("classDoc:", classDoc)
         const address = classDoc.class_address && classDoc.class_address[0] ? 
             JSON.parse(classDoc.class_address[0]) : null;
         const schedule = classDoc.class_schedule && classDoc.class_schedule[0] ? 
             JSON.parse(classDoc.class_schedule[0]) : null;
         
         console.log("shecudle",schedule)
-        return {address,schedule};
+        return {address,schedule,size: classDoc.class_size};
+    
         
     } catch (error) {
         console.error('Error getting class details:', error);
@@ -1522,7 +1522,7 @@ export const getClassAddress = async (classId) => {
 };
 
 //updating class details for teacher
-export const updateClassDetails = async (classId, newAddress, newSchedule) => {
+export const updateClassDetails = async (classId, newAddress, newSchedule, newClassSize) => {
     try {
         const classDocuments = await databases.listDocuments(
             appwriteConfig.databaseId,
@@ -1538,8 +1538,11 @@ export const updateClassDetails = async (classId, newAddress, newSchedule) => {
         
         const updates = {
             class_address: [JSON.stringify(newAddress)],
-            class_schedule: [JSON.stringify(newSchedule)]
+            class_schedule: [JSON.stringify(newSchedule)],
+            class_size: newClassSize
         };
+
+        console.log('Updating class with:', updates);
 
         const updatedClass = await databases.updateDocument(
             appwriteConfig.databaseId,

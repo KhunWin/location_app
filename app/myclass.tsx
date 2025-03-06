@@ -11,7 +11,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 
 const MyClass = () => {
-    const { className, classId } = useLocalSearchParams();
+    const { className, classId, classSize } = useLocalSearchParams();
     const [isGenerating, setIsGenerating] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
     const [attendanceCode, setAttendanceCode] = useState('');
@@ -22,6 +22,10 @@ const MyClass = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [classAddress, setClassAddress] = useState(null);
     const [classDetails, setClassDetails] = useState(null);
+    
+    console.log("ClassName:", className);
+    console.log("ClassId:", classId);
+    console.log("ClassSize:", classSize);
 
         // Add this function to refresh all data
     const refreshAllData = async () => {
@@ -67,6 +71,7 @@ const MyClass = () => {
                 // setClassAddress(address);
                 // Load class address and schedule
                 const classDetails = await getClassAddress(classId);
+                console.log("Full classDetails structure:", classDetails);
                 if (classDetails) {
                     setClassAddress(classDetails.address);
                     setClassDetails(classDetails); // This will contain both address and schedule
@@ -378,45 +383,6 @@ const MyClass = () => {
         }
     };
 
-    // const FileItem = ({ file }) => {
-    //     const handleFilePress = async () => {
-    //         try {
-    //             if (file.fileURL) {
-    //                 console.log('Attempting to open file:', file.fileURL);
-    //                 const canOpen = await Linking.canOpenURL(file.fileURL);
-                    
-    //                 if (canOpen) {
-    //                     await Linking.openURL(file.fileURL);
-    //                     console.log('File opened successfully');
-    //                 } else {
-    //                     console.log('Cannot open URL:', file.fileURL);
-    //                     Alert.alert('Error', 'Cannot open this file type');
-    //                 }
-    //             } else {
-    //                 console.log('No file URL available:', file);
-    //                 Alert.alert('Error', 'File URL not available');
-    //             }
-    //         } catch (error) {
-    //             console.error('Error opening file:', error);
-    //             Alert.alert('Error', 'Failed to open file');
-    //         }
-    //     };
-
-    //     return (
-    //         <TouchableOpacity 
-    //             className="bg-secondary rounded-lg p-3 m-2"
-    //             onPress={handleFilePress}
-    //         >
-    //             <Text className="text-white text-sm" numberOfLines={2}>
-    //                 {file.filename || 'Unnamed file'}
-    //             </Text>
-    //             <Text className="text-gray-400 text-xs mt-1">
-    //                 {new Date(file.$createdAt).toLocaleDateString()}
-    //             </Text>
-    //         </TouchableOpacity>
-    //     );
-    // };
-
 
     const FileItem = ({ file }) => {
         const handleFilePress = async () => {
@@ -591,12 +557,14 @@ const MyClass = () => {
                                     classId: classId,
                                     className: className,
                                     classAddress: JSON.stringify(classAddress),
-                                    classSchedule: JSON.stringify(classDetails?.schedule)
+                                    classSchedule: JSON.stringify(classDetails?.schedule),
+                                    classSize: classDetails?.size?.toString() || '' // Use size from classDetails
+
                                 }
                             })}
                             containerStyle="bg-secondary py-2"
                         />
-
+                       
 
                         <CustomButton 
                             title='Upload File' 

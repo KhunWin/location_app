@@ -476,6 +476,7 @@ const Bookmark = () => {
             name: classItem.class_name,
             class_id: classItem.class_id,  // Make sure to include class_id
             studentCount,
+            classSize: classItem.class_size,
             fileCount
           });
         }
@@ -538,7 +539,7 @@ const Bookmark = () => {
                 <Text className="text-white text-left" numberOfLines={1}>{classInfo.name}</Text>
               </View>
               <View className="w-[25%]">
-                <Text className="text-white text-center">{classInfo.studentCount}</Text>
+                <Text className="text-white text-center">{classInfo.studentCount}/{classInfo.classSize}</Text>
               </View>
               <View className="w-[25%]">
                 <Text className="text-white text-center">{classInfo.fileCount}</Text>

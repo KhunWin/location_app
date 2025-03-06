@@ -10,6 +10,7 @@ import * as Location from 'expo-location';
 
 const Create = () => {
   const [className, setClassName] = useState('')
+  const [classSize, setClassSize] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentUser, setCurrentUser] = useState(null)
   const [classes, setClasses] = useState([])
@@ -184,12 +185,13 @@ const Create = () => {
       const cleanSchedule = Object.fromEntries(
         Object.entries(schedule).filter(([_, value]) => value.trim() !== '')
     );
-      
-      const newClass = await createClass(className, locationCoords, addressData,cleanSchedule);
+      const classSizeInt = parseInt(classSize) || 0;
+      const newClass = await createClass(className, locationCoords, addressData,cleanSchedule,classSizeInt);
       console.log('Class created:', newClass);
       
       // Clear all form fields
       setClassName('');
+      setClassSize('');
       setRoom('');
       setFloor('');
       setBuilding('');
@@ -306,6 +308,13 @@ const Create = () => {
             value={className}
             handleChangeText={setClassName}
             placeholder="Enter class name"
+          />
+          <FormField
+            title="Classroom Limit"
+            value={classSize}
+            handleChangeText={setClassSize}
+            placeholder="Enter classroom limit"
+            keyboardType="numeric"
           />
 
           {/* Add address fields */}
