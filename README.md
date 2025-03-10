@@ -66,4 +66,7 @@ git push -u origin main
 4. PDF view only for students within parameter.
 5. Deleting classes 
 6. getting direction on the map
-7. 
+7. adding google calendar for classroom schedule (if possible)
+8. human direction (if possible)
+9. create a reasonable use case with real samples like Computer lab 
+10. add images for classes 

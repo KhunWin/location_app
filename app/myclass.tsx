@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import CustomButton from '@/components/CustomButton'
 import FormField from '@/components/FormField'
 import { useLocalSearchParams, router } from 'expo-router'
-import { getClassAddress, getCurrentUser, submitAttendance, parseJoinedClasses, listFiles, getClassAttendanceDaysForStudent } from '../lib/appwrite'
+import { calculateDistance, getClassAddress, getCurrentUser, submitAttendance, parseJoinedClasses, listFiles, getClassAttendanceDaysForStudent } from '../lib/appwrite'
 import { deleteFile } from '../lib/appwrite'
 import * as Location from 'expo-location'
 import { useFocusEffect } from '@react-navigation/native';
@@ -23,10 +23,6 @@ const MyClass = () => {
     const [classAddress, setClassAddress] = useState(null);
     const [classDetails, setClassDetails] = useState(null);
     
-    console.log("ClassName:", className);
-    console.log("ClassId:", classId);
-    console.log("ClassSize:", classSize);
-
         // Add this function to refresh all data
     const refreshAllData = async () => {
         try {
@@ -308,6 +304,7 @@ const MyClass = () => {
             setIsRefreshing(false);
         }
     };
+    
     const handleCheckIn = async (skipCodeCheck = false, dayData = null) => {
         if (!currentUser) {
             // console.error('No user data available');
@@ -387,6 +384,53 @@ const MyClass = () => {
     const FileItem = ({ file }) => {
         const handleFilePress = async () => {
             try {
+    
+                // If user is a student, check location before allowing file access
+                if (currentUser?.role !== 'teacher') {
+                    // Get the user's current location
+                    const userLocation = await getCurrentLocation();
+                    if (!userLocation) {
+                        Alert.alert('Error', 'Unable to get your location. Please ensure GPS is enabled.');
+                        return;
+                    }
+
+                    // Check if classDetails and location exist
+                    if (!classDetails?.location) {
+                        console.log('Missing class location data:', classDetails);
+                        Alert.alert('Error', 'Class location information is not available.');
+                        return;
+                    }
+
+
+                    // Use the location from classDetails instead of classAddress
+                    if (!classDetails?.location) {
+                        Alert.alert('Error', 'Class location information is not available.');
+                        return;
+                    }
+
+                    console.log('User location:', userLocation);
+                    console.log('Class location:', classDetails.location);
+
+                    // Calculate distance to class using the proper location coordinates
+                    const distance = calculateDistance(
+                        userLocation.latitude,
+                        userLocation.longitude,
+                        classDetails.location.latitude,
+                        classDetails.location.longitude
+                    );
+
+                    console.log('Distance to class:', distance, 'meters');
+
+                    // Set threshold for presence
+                    const PRESENCE_THRESHOLD = 50; // meters
+
+                    if (distance > PRESENCE_THRESHOLD) {
+                        Alert.alert('Access Denied', `You need to be in the class to see this file. You are currently ${Math.round(distance)} meters away.`);
+                        return;
+                    }
+                }
+
+                // Proceed with file opening if location check passes or user is teacher
                 if (file.fileURL) {
                     console.log('Attempting to open file:', file.fileURL);
                     const canOpen = await Linking.canOpenURL(file.fileURL);

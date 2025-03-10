@@ -1511,8 +1511,12 @@ export const getClassAddress = async (classId) => {
         const schedule = classDoc.class_schedule && classDoc.class_schedule[0] ? 
             JSON.parse(classDoc.class_schedule[0]) : null;
         
-        console.log("shecudle",schedule)
-        return {address,schedule,size: classDoc.class_size};
+            // Parse class location
+        const location = classDoc.class_location && classDoc.class_location[0] ? 
+        JSON.parse(classDoc.class_location[0]) : null;
+        
+        console.log("shecudle:",schedule)
+        return {address,schedule, location, size: classDoc.class_size};
     
         
     } catch (error) {
