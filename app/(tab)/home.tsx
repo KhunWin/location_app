@@ -296,7 +296,8 @@ const handleCreateClass = async () => {
         style={{ width: itemWidth }}
       >
         <Image 
-          source={images.class_icon}
+          // source={images.class_icon}
+          source={classItem.class_image ? { uri: classItem.class_image } : images.class_icon}
           style={{ width: '100%', height: itemWidth }}
           resizeMode="cover"
         />

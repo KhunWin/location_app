@@ -7,6 +7,8 @@ import CustomButton from '@/components/CustomButton'
 import { createClass, getCurrentUser, getUserClasses, uploadFile } from '../../lib/appwrite'
 import { images } from '@/constants'
 import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
+
 
 const Create = () => {
   const [className, setClassName] = useState('')
@@ -24,6 +26,7 @@ const Create = () => {
   const [floor, setFloor] = useState('');
   const [building, setBuilding] = useState('');
   const [street, setStreet] = useState('');
+  const [classImage, setClassImage] = useState(null);
 
   const [schedule, setSchedule] = useState({
     Monday: '',
@@ -34,6 +37,38 @@ const Create = () => {
     Saturday:'',
     Sunday:''
   });
+
+  const pickImage = async () => {
+    try {
+      // Request permission
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please allow access to your photo library to upload a class image.');
+        return;
+      }
+      
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.8,
+      });
+      
+      console.log('Image picker result:', result);
+      
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const selectedImage = result.assets[0];
+        setClassImage(selectedImage);
+        console.log('Selected image:', selectedImage);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to select image');
+    }
+  };
+
 
   // Add handleScheduleChange function
   const handleScheduleChange = (day, value) => {
@@ -93,51 +128,89 @@ const Create = () => {
     }
   };
 
+
+  //without imageurl
   // const handleCreateClass = async () => {
-  //     if (!className.trim()) {
-  //       Alert.alert('Error', 'Please enter a class name');
+  //   if (!className.trim()) {
+  //     Alert.alert('Error', 'Please enter a class name');
+  //     return;
+  //   }
+
+  //   // Validate at least one schedule entry
+  //   const hasSchedule = Object.values(schedule).some(time => time.trim() !== '');
+  //   if (!hasSchedule) {
+  //       Alert.alert('Error', 'Please enter at least one class schedule');
+  //       return;
+  //   }
+  //   try {
+  //     setIsSubmitting(true);
+      
+  //     // Get current location
+  //     let { status } = await Location.requestForegroundPermissionsAsync();
+  //     if (status !== 'granted') {
+  //       Alert.alert('Permission denied', 'Location permission is required');
   //       return;
   //     }
 
-  //     try {
-  //       setIsSubmitting(true);
-        
-  //       // Get current location
-  //       let { status } = await Location.requestForegroundPermissionsAsync();
-  //       if (status !== 'granted') {
-  //         Alert.alert('Permission denied', 'Location permission is required');
-  //         return;
-  //       }
+  //     const location = await Location.getCurrentPositionAsync({});
+  //     const locationCoords = {
+  //       latitude: location.coords.latitude,
+  //       longitude: location.coords.longitude
+  //     };
 
-  //       const location = await Location.getCurrentPositionAsync({});
-  //       const locationCoords = {
-  //         latitude: location.coords.latitude,
-  //         longitude: location.coords.longitude
-  //       };
-        
-  //       console.log('Creating class with name and location:', {
-  //         className,
-  //         location: locationCoords
-  //       });
-        
-  //       const newClass = await createClass(className, locationCoords);
-  //       console.log('Class created:', newClass);
-        
-  //       setClassName('');
-        
-  //       router.push({
-  //         pathname: '/home',
-  //         params: { refresh: Date.now() }
-  //       });
-        
-  //       Alert.alert('Success', 'Class created successfully');
-  //     } catch (error) {
-  //       console.error('Error creating class:', error);
-  //       Alert.alert('Error', 'Failed to create class');
-  //     } finally {
-  //       setIsSubmitting(false);
-  //     }
+  //     // Create address object
+  //     const addressData = {
+  //       room,
+  //       floor,
+  //       building,
+  //       street
+  //     };
+      
+  //     console.log('Creating class with name, location and address:', {
+  //       className,
+  //       location: locationCoords,
+  //       address: addressData
+  //     });
+
+  //     // Filter out empty schedule entries
+  //     const cleanSchedule = Object.fromEntries(
+  //       Object.entries(schedule).filter(([_, value]) => value.trim() !== '')
+  //   );
+  //     const classSizeInt = parseInt(classSize) || 0;
+  //     const newClass = await createClass(className, locationCoords, addressData,cleanSchedule,classSizeInt);
+  //     console.log('Class created:', newClass);
+      
+  //     // Clear all form fields
+  //     setClassName('');
+  //     setClassSize('');
+  //     setRoom('');
+  //     setFloor('');
+  //     setBuilding('');
+  //     setStreet('');
+  //     setSchedule({
+  //       Monday: '',
+  //       Tuesday: '',
+  //       Wednesday: '',
+  //       Thursday: '',
+  //       Friday: '',
+  //       Saturday:'',
+  //       Sunday:''
+  //     });
+      
+  //     router.push({
+  //       pathname: '/home',
+  //       params: { refresh: Date.now() }
+  //     });
+      
+  //     Alert.alert('Success', 'Class created successfully');
+  //   } catch (error) {
+  //     console.error('Error creating class:', error);
+  //     Alert.alert('Error', 'Failed to create class');
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
   // };
+
 
   const handleCreateClass = async () => {
     if (!className.trim()) {
@@ -175,18 +248,37 @@ const Create = () => {
         street
       };
       
-      console.log('Creating class with name, location and address:', {
+      // Upload image if selected
+      let imageUrl = null;
+      if (classImage) {
+        console.log('Uploading class image...');
+        
+        const file = {
+          uri: classImage.uri,
+          name: `class_image_${Date.now()}.jpg`,
+          type: 'image/jpeg',
+          size: classImage.fileSize || 0,
+          isClassImage: true // Flag to identify this as a class image
+        };
+        
+        const uploadResult = await uploadFile(file);
+        imageUrl = uploadResult.fileMetadata.fileURL;
+        console.log('Image uploaded successfully:', imageUrl);
+      }
+      
+      console.log('Creating class with name, location, address and image:', {
         className,
         location: locationCoords,
-        address: addressData
+        address: addressData,
+        imageUrl
       });
 
       // Filter out empty schedule entries
       const cleanSchedule = Object.fromEntries(
         Object.entries(schedule).filter(([_, value]) => value.trim() !== '')
-    );
+      );
       const classSizeInt = parseInt(classSize) || 0;
-      const newClass = await createClass(className, locationCoords, addressData,cleanSchedule,classSizeInt);
+      const newClass = await createClass(className, locationCoords, addressData, cleanSchedule, classSizeInt, imageUrl);
       console.log('Class created:', newClass);
       
       // Clear all form fields
@@ -196,6 +288,7 @@ const Create = () => {
       setFloor('');
       setBuilding('');
       setStreet('');
+      setClassImage(null);
       setSchedule({
         Monday: '',
         Tuesday: '',
@@ -374,6 +467,107 @@ const Create = () => {
   //   </SafeAreaView>
   // );
 
+  //without image url
+  // return (
+  //   <SafeAreaView className="bg-primary h-full">
+  //     <ScrollView>
+  //       <View className="px-4 my-6">
+  //         {/* Basic class information section */}
+  //         <Text className="text-white text-xl font-semibold mb-3">Class Information</Text>
+  //         <View className="bg-[#1E293B] rounded-lg p-4 mb-5">
+  //           <FormField 
+  //             title="Class Name"
+  //             value={className}
+  //             handleChangeText={setClassName}
+  //             placeholder="Enter class name"
+  //           />
+  //           <FormField
+  //             title="Classroom Limit"
+  //             value={classSize}
+  //             handleChangeText={setClassSize}
+  //             placeholder="Enter classroom limit"
+  //             keyboardType="numeric"
+  //           />
+  //         </View>
+
+  //         {/* Location section */}
+  //         <Text className="text-white text-xl font-semibold mb-3">Location Details</Text>
+  //         <View className="bg-[#1E293B] rounded-lg p-4 mb-5">
+  //           {/* Two columns for room and floor */}
+  //           <View className="flex-row gap-2">
+  //             <View className="flex-1">
+  //               <FormField
+  //                 title="Room"
+  //                 value={room}
+  //                 handleChangeText={setRoom}
+  //                 placeholder="Room #"
+  //               />
+  //             </View>
+  //             <View className="flex-1">
+  //               <FormField
+  //                 title="Floor"
+  //                 value={floor}
+  //                 handleChangeText={setFloor}
+  //                 placeholder="Floor #"
+  //                 keyboardType="numeric"
+  //               />
+  //             </View>
+  //           </View>
+            
+  //           {/* Building and street */}
+  //           <FormField
+  //             title="Building"
+  //             value={building}
+  //             handleChangeText={setBuilding}
+  //             placeholder="Enter building name"
+  //           />
+  //           <FormField
+  //             title="Street"
+  //             value={street}
+  //             handleChangeText={setStreet}
+  //             placeholder="Enter street address"
+  //           />
+  //         </View>
+
+  //         {/* Schedule section */}
+  //         <Text className="text-white text-xl font-semibold mb-3">Class Schedule</Text>
+  //         <View className="bg-[#1E293B] rounded-lg p-4 mb-5">
+  //           <View className="flex-row flex-wrap">
+  //             {['Monday', 'Tuesday', 'Wednesday'].map((day) => (
+  //               <View key={day} className="w-1/2 pr-1 mb-2">
+  //                 <FormField
+  //                   title={day.substring(0, 3)}
+  //                   value={schedule[day]}
+  //                   handleChangeText={(value) => handleScheduleChange(day, value)}
+  //                   placeholder="e.g., 8-11"
+  //                 />
+  //               </View>
+  //             ))}
+  //             {['Thursday', 'Friday', 'Saturday'].map((day) => (
+  //               <View key={day} className="w-1/2 pr-1 mb-2">
+  //                 <FormField
+  //                   title={day.substring(0, 3)}
+  //                   value={schedule[day]}
+  //                   handleChangeText={(value) => handleScheduleChange(day, value)}
+  //                   placeholder="e.g., 8-11"
+  //                 />
+  //               </View>
+  //             ))}
+  //           </View>
+  //         </View>
+
+  //         <CustomButton
+  //           title={isSubmitting ? "Creating..." : "Create Class"}
+  //           handlePress={handleCreateClass}
+  //           isLoading={isSubmitting}
+  //           containerStyle="mt-4"
+  //         />
+  //       </View>
+  //     </ScrollView>
+  //   </SafeAreaView>
+  // );
+
+
   return (
     <SafeAreaView className="bg-primary h-full">
       <ScrollView>
@@ -394,6 +588,27 @@ const Create = () => {
               placeholder="Enter classroom limit"
               keyboardType="numeric"
             />
+          </View>
+
+          {/* Class Image Section */}
+          <Text className="text-white text-xl font-semibold mb-3">Class Image</Text>
+          <View className="bg-[#1E293B] rounded-lg p-4 mb-5">
+            <TouchableOpacity 
+              onPress={pickImage}
+              className="bg-secondary p-3 rounded-lg mb-3 items-center"
+            >
+              <Text className="text-white font-medium">Select Image</Text>
+            </TouchableOpacity>
+            
+            {classImage && (
+              <View className="mt-2">
+                <Image 
+                  source={{ uri: classImage.uri }} 
+                  className="w-full h-48 rounded-lg"
+                  resizeMode="cover"
+                />
+              </View>
+            )}
           </View>
 
           {/* Location section */}
@@ -472,7 +687,6 @@ const Create = () => {
       </ScrollView>
     </SafeAreaView>
   );
-
 
 
 }

@@ -115,6 +115,7 @@ const MyClass = () => {
         try {
             console.log('Attempting to load files for class:', classId);
             const filesList = await listFiles(classId);
+            console.log('Files list:', filesList)
             
             // Add detailed logging
             if (!filesList || filesList.length === 0) {
@@ -124,9 +125,10 @@ const MyClass = () => {
             }
 
             // console.log('Raw files data:', filesList);
+            const filteredFiles = filesList.filter(file => file.is_classimage !== "Yes");
             
             // Verify file structure
-            const validFiles = filesList.filter(file => {
+            const validFiles = filteredFiles.filter(file => {
                 const isValid = file && file.fileURL && file.filename;
                 if (!isValid) {
                     console.log('Invalid file structure:', file);

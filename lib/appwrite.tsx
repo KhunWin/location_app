@@ -386,12 +386,13 @@ export const getCurrentUser = async () => {
 //with push notification
 //with push notification
 //with push notification
-export const createClass = async (className, location, address, schedule, classSize) => {
+export const createClass = async (className, location, address, schedule, classSize, imageUrl) => {
     try {
         console.log('Creating class with name, location and address:', {
             className,
             location,
-            address
+            address,
+            imageUrl
         });
 
         // Get location coordinates if not provided
@@ -419,9 +420,11 @@ export const createClass = async (className, location, address, schedule, classS
             class_location: [JSON.stringify(locationCoords)],
             class_address: [JSON.stringify(address)],
             class_schedule: schedule ? [JSON.stringify(schedule)] : [],
+            class_image: imageUrl,
             students: [],
             attendance_days: [],
             class_size: classSize || 30
+            
         };
 
         console.log('Formatted class data:', classData);
@@ -520,7 +523,8 @@ export const getUserClasses = async () => {
         //     console.log('- Number of students:', classDoc.students ? classDoc.students.length : 0);
         //     console.log('------------------------');
         // });
-        
+            
+            console.log("this is in getuserclasses", classes.documents)
             return classes.documents;
         } else if (user.role === 'student') {
             // For students, get all available classes
@@ -1610,145 +1614,6 @@ export const logoutUser = async () => {
 }
 
 
-// export const uploadFile = async (fileData) => {
-//     try {
-//         console.log('Starting file upload');
-        
-//         // Prepare the file data similar to the sample code
-//         const preparedFile = {
-//             name: fileData.name,
-//             type: fileData.type,
-//             size: fileData.size,
-//             uri: fileData.uri
-//         };
-
-//         console.log('Prepared file:', preparedFile);
-
-//         // Upload directly to Appwrite storage
-//         const uploadResult = await storage.createFile(
-//             appwriteConfig.storageId,
-//             ID.unique(),
-//             preparedFile,  // Send the prepared file object directly
-//             ['read("any")', 'write("any")']
-//         );
-
-//         console.log('Upload result:', uploadResult);
-//         return uploadResult;
-
-//     } catch (error) {
-//         console.error('Error uploading file:', error);
-//         throw error;
-//     }
-// };
-
-
-// export const listFiles = async () => {
-//     try {
-//         const files = await storage.listFiles(appwriteConfig.storageId);
-        
-//         // Get file URLs and other details
-//         const fileDetails = files.files.map(file => ({
-//             name: file.name,
-//             size: `${(file.sizeOriginal / 1024 / 1024).toFixed(2)} MB`,
-//             created: new Date(file.$createdAt).toLocaleString(),
-//             fileId: file.$id,
-//             url: storage.getFileView(appwriteConfig.storageId, file.$id).href,
-
-//         }));
-
-//         console.log('Retrieved files:', fileDetails);
-//         return fileDetails;
-//     } catch (error) {
-//         console.error('Error listing files:', error);
-//         throw error;
-//     }
-// };
-
-
-//this is working for only teacher role
-// export const listFiles = async (classId: string) => {
-//     try {
-//         // First, create a query to filter files by class_id
-//         const queries = [
-//             Query.equal('class_id', classId)
-//         ];
-
-//         // Get files with the query filter
-//         const files = await databases.listDocuments(
-//             appwriteConfig.databaseId,
-//             appwriteConfig.fileCollectionId,
-//             queries
-//         );
-
-//         // Log the raw response
-//         console.log('Raw database response:', files);
-
-//         // Log each file document
-//         files.documents.forEach((file, index) => {
-//             console.log(`File ${index + 1}:`, {
-//                 documentId: file.$id,
-//                 filename: file.filename,
-//                 creator: file.creator,
-//                 classId: file.class_id,
-//                 fileURL: file.fileURL,
-//                 createdAt: file.$createdAt
-//             });
-//         });
-
-//         return files.documents;
-//     } catch (error) {
-//         console.error('Error listing files:', error);
-//         throw error;
-//     }
-// };
-
-// export const listFiles = async (classId: string) => {
-//     try {
-//         // Get current user to check role
-//         const currentUser = await getCurrentUser();
-//         console.log('Checking files for classId:', classId);
-        
-//         // For students, verify enrollment first
-//         if (currentUser.role === 'student') {
-//             const joinedClasses = parseJoinedClasses(currentUser.joined_classes);
-//             console.log('Student joined classes:', joinedClasses);
-            
-//             // Find the matching class using base class ID
-//             const enrollment = joinedClasses.find(cls => {
-//                 const baseClassId = classId.split('000')[0];
-//                 const baseJoinedClassId = cls.class_id.split('000')[0];
-//                 console.log('Comparing:', baseJoinedClassId, 'with:', baseClassId);
-//                 return baseJoinedClassId === baseClassId;
-//             });
-            
-//             if (!enrollment || enrollment.status !== 'approved') {
-//                 console.log('Student not approved for this class');
-//                 return [];
-//             }
-//         }
-
-//         // Create base query to filter files by class_id
-//         const baseClassId = classId.split('000')[0];
-//         const queries = [
-//             Query.equal('class_id', baseClassId + '000' + classId.split('000')[1]?.split('c')[0] || '')
-//         ];
-
-//         // Get files with the query filter
-//         const files = await databases.listDocuments(
-//             appwriteConfig.databaseId,
-//             appwriteConfig.fileCollectionId,
-//             queries
-//         );
-
-//         console.log('Files query result:', files);
-
-//         return files.documents;
-//     } catch (error) {
-//         console.error('Error listing files:', error);
-//         throw error;
-//     }
-// };
-
 export const listFiles = async (classId: string) => {
     try {
         // Get current user to check role
@@ -1790,6 +1655,67 @@ export const listFiles = async (classId: string) => {
     }
 };
 
+// export const uploadFile = async (fileData) => {
+//     try {
+//         console.log('Starting file upload');
+        
+//         // Get current user
+//         const currentUser = await getCurrentUser();
+        
+//         // Prepare the file data
+//         const preparedFile = {
+//             name: fileData.name,
+//             type: fileData.type,
+//             size: fileData.size,
+//             uri: fileData.uri
+//         };
+
+//         console.log('Prepared file:', preparedFile);
+
+//         // Upload to Appwrite storage
+//         const uploadResult = await storage.createFile(
+//             appwriteConfig.storageId,
+//             ID.unique(),
+//             preparedFile,
+//             ['read("any")', 'write("any")']
+//         );
+
+//         // Get file URL
+//         const fileURL = storage.getFileView(
+//             appwriteConfig.storageId,
+//             uploadResult.$id
+//         ).href;
+
+//         // Create metadata document in fileCollection
+//         const fileMetadata = await databases.createDocument(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.fileCollectionId,
+//             ID.unique(),
+//             {
+//                 filename: fileData.name,
+//                 creator: currentUser.$id,
+//                 fileURL: fileURL,
+//                 class_id: fileData.classId // Add class_id to the metadata
+
+//             }
+//         );
+
+//         console.log('File metadata created:', fileMetadata);
+//         return {
+//             uploadResult,
+//             fileMetadata
+//         };
+
+//     } catch (error) {
+//         console.error('Error uploading file:', error);
+//         throw error;
+//     }
+// };
+
+//for students to extract all attendace_days
+// Add this new function after your other export functions
+
+
 export const uploadFile = async (fileData) => {
     try {
         console.log('Starting file upload');
@@ -1821,18 +1747,25 @@ export const uploadFile = async (fileData) => {
             uploadResult.$id
         ).href;
 
-        // Create metadata document in fileCollection
+        // Create metadata document in fileCollection with additional fields
+        const metadataFields = {
+            filename: fileData.name,
+            creator: currentUser.$id,
+            fileURL: fileURL,
+            // Always include class_id, use a default if not provided
+            class_id: fileData.classId || 'global'
+        };
+        
+        // Add classImage flag if this is a class image
+        if (fileData.isClassImage) {
+            metadataFields.is_classimage = "Yes";
+        }
+
         const fileMetadata = await databases.createDocument(
             appwriteConfig.databaseId,
             appwriteConfig.fileCollectionId,
             ID.unique(),
-            {
-                filename: fileData.name,
-                creator: currentUser.$id,
-                fileURL: fileURL,
-                class_id: fileData.classId // Add class_id to the metadata
-
-            }
+            metadataFields
         );
 
         console.log('File metadata created:', fileMetadata);
@@ -1847,8 +1780,8 @@ export const uploadFile = async (fileData) => {
     }
 };
 
-//for students to extract all attendace_days
-// Add this new function after your other export functions
+
+
 export const getClassAttendanceDaysForStudent = async (classId) => {
     try {
         console.log('\n=== Starting getClassAttendanceDaysForStudent ===');
@@ -1932,7 +1865,7 @@ export const getClassAddress = async (classId) => {
 };
 
 //updating class details for teacher
-export const updateClassDetails = async (classId, newAddress, newSchedule, newClassSize) => {
+export const updateClassDetails = async (classId, newAddress, newSchedule, newClassSize, imageUrl) => {
     try {
         const classDocuments = await databases.listDocuments(
             appwriteConfig.databaseId,
@@ -1951,6 +1884,10 @@ export const updateClassDetails = async (classId, newAddress, newSchedule, newCl
             class_schedule: [JSON.stringify(newSchedule)],
             class_size: newClassSize
         };
+        // Add image URL to updates if provided
+        if (imageUrl) {
+            updates.class_image = imageUrl;
+        }
 
         console.log('Updating class with:', updates);
 
