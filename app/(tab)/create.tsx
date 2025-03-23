@@ -56,12 +56,12 @@ const Create = () => {
       setCurrentUser(user);
   
       if (user.role === 'student') {
-        console.log('Parsing joined classes:', user.joined_classes);
+        // console.log('Parsing joined classes:', user.joined_classes);
         
         const joinedClasses = user.joined_classes.map(classStr => {
           try {
             const parsed = JSON.parse(classStr);
-            console.log('Parsed class entry:', parsed);
+            // console.log('Parsed class entry:', parsed);
             return parsed;
           } catch (e) {
             console.error('Error parsing class:', e);
@@ -78,11 +78,11 @@ const Create = () => {
           const isApproved = joinedClasses.some(joined => 
             joined.class_id === cls.class_id && joined.status === 'approved'
           );
-          console.log(`Class ${cls.class_name} (${cls.class_id}) approved status:`, isApproved);
+          // console.log(`Class ${cls.class_name} (${cls.class_id}) approved status:`, isApproved);
           return isApproved;
         });
   
-        console.log('Final approved classes:', approvedClasses);
+        // console.log('Final approved classes:', approvedClasses);
         setClasses(approvedClasses);
       }
     } catch (error) {
@@ -233,7 +233,7 @@ const Create = () => {
   };
 
   const renderClassItem = (classItem) => {
-    console.log('Rendering class item:', classItem);
+    // console.log('Rendering class item:', classItem);
     return (
       <TouchableOpacity 
         key={classItem.$id}
@@ -270,7 +270,7 @@ const Create = () => {
   }
 
   if (currentUser?.role === 'student') {
-    console.log('Rendering student view with classes:', classes);
+    // console.log('Rendering student view with classes:', classes);
     return (
       <SafeAreaView className="bg-primary h-full">
         <ScrollView>

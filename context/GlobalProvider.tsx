@@ -1,6 +1,7 @@
 import { getCurrentUser } from "@/lib/appwrite";
 import React, { createContext, useContext, useState, useEffect } from "react";
 // import { getCurrentUser } from "../lib/appwrite";
+import { NotificationProvider } from './NotificationContext';
 
 // Define the interface for your context value
 interface GlobalContextType {
@@ -51,19 +52,35 @@ const GlobalProvider = ({ children }) => {
 
     }, []);
 
-    return (
-        <GlobalContext.Provider 
-        value={{
-            isLoggedIn,
-            setIsLoggedIn,
-            user,
-            setUser,
-            isLoading
+    // return (
+    //     <GlobalContext.Provider 
+    //     value={{
+    //         isLoggedIn,
+    //         setIsLoggedIn,
+    //         user,
+    //         setUser,
+    //         isLoading
 
-        }}
-        >
-            {children}
-        </GlobalContext.Provider>
+    //     }}
+    //     >
+    //         {children}
+    //     </GlobalContext.Provider>
+    // )
+
+    return (
+        <NotificationProvider>
+            <GlobalContext.Provider 
+                value={{
+                    isLoggedIn,
+                    setIsLoggedIn,
+                    user,
+                    setUser,
+                    isLoading
+                }}
+            >
+                {children}
+            </GlobalContext.Provider>
+        </NotificationProvider>
     )
 }
 

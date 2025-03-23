@@ -67,7 +67,7 @@ const MyClass = () => {
                 // setClassAddress(address);
                 // Load class address and schedule
                 const classDetails = await getClassAddress(classId);
-                console.log("Full classDetails structure:", classDetails);
+                // console.log("Full classDetails structure:", classDetails);
                 if (classDetails) {
                     setClassAddress(classDetails.address);
                     setClassDetails(classDetails); // This will contain both address and schedule
@@ -408,8 +408,8 @@ const MyClass = () => {
                         return;
                     }
 
-                    console.log('User location:', userLocation);
-                    console.log('Class location:', classDetails.location);
+                    // console.log('User location:', userLocation);
+                    // console.log('Class location:', classDetails.location);
 
                     // Calculate distance to class using the proper location coordinates
                     const distance = calculateDistance(
@@ -419,7 +419,7 @@ const MyClass = () => {
                         classDetails.location.longitude
                     );
 
-                    console.log('Distance to class:', distance, 'meters');
+                    // console.log('Distance to class:', distance, 'meters');
 
                     // Set threshold for presence
                     const PRESENCE_THRESHOLD = 50; // meters

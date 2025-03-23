@@ -2,6 +2,7 @@ import SignIn from '@/app/(auth)/sign-in';
 import * as Location from 'expo-location';  // Add this import
 import { Client, Account, Avatars, Databases,Storage, ID, Query, AppwriteException } from 'react-native-appwrite';
 import * as DocumentPicker from 'expo-document-picker';
+import * as Notifications from 'expo-notifications';
 
 
 
@@ -26,23 +27,88 @@ client
     .setProject(appwriteConfig.projectId) // Your project ID
     .setPlatform(appwriteConfig.platform) // Your application ID or bundle ID.
 
-const account = new Account(client);
-const avatars = new Avatars(client);
-const databases = new Databases(client);
-const storage = new Storage(client);  // Add this line
+export const account = new Account(client);
+export const avatars = new Avatars(client);
+export const databases = new Databases(client);
+export const storage = new Storage(client);  // Add this line
 
 
-
+// //this function is showing notification even when there is no new class.
 export const  signIn = async (email, password) => {
     try { 
         // Check for and delete any existing session
         try {
             await account.deleteSession('current');
+
+            // // In your login function, add this after successful login
+            // await Notifications.scheduleNotificationAsync({
+            //     content: {
+            //     title: "Welcome back!",
+            //     body: "You have new class notifications to check.",
+            //     },
+            //     trigger: null, // Show immediately
+            // });
+
         } catch (e) {
             // Ignore error if no session exists
         }
 
         const session = await account.createEmailPasswordSession(email, password);
+
+        // After successful login, get user's role
+        const users = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.userCollectionId,
+            [Query.equal('accountId', session.userId)]
+        );
+        
+        if (users.documents.length > 0) {
+            const user = users.documents[0];
+            
+            // If student, show available classes
+            if (user.role === 'student') {
+                // Get available classes
+                const classes = await databases.listDocuments(
+                    appwriteConfig.databaseId,
+                    appwriteConfig.classCollectionId,
+                    [], // No query filters to get all classes
+                    10  // Limit to 10 classes
+                );
+                
+                if (classes.documents.length > 0) {
+                    // Get the most recent class
+                    const recentClass = classes.documents[classes.documents.length - 1];
+                    
+                    // Send notification with class name
+                    await Notifications.scheduleNotificationAsync({
+                        content: {
+                            title: "Welcome back!",
+                            body: `New class "${recentClass.class_name}" is available for enrollment!`,
+                        },
+                        trigger: null, // Show immediately
+                    });
+                } else {
+                    // No classes available
+                    await Notifications.scheduleNotificationAsync({
+                        content: {
+                            title: "Welcome back!",
+                            body: "No classes available at the moment.",
+                        },
+                        trigger: null,
+                    });
+                }
+            } else {
+                // For teachers or other roles
+                await Notifications.scheduleNotificationAsync({
+                    content: {
+                        title: "Welcome back!",
+                        body: "You're logged in successfully.",
+                    },
+                    trigger: null,
+                });
+            }
+        }
+        
         return session;
 
     } catch(error) {
@@ -50,6 +116,7 @@ export const  signIn = async (email, password) => {
         throw error; // Throw the original error
     }
 }
+
 
 export const createUser = async (email, password, username, role) => {
     try {
@@ -189,12 +256,15 @@ export const getCurrentUser = async () => {
 
 //creating a class
 
-//with location data
-// export const createClass = async (className, location) => {
+
+// //with update class address
+// export const createClass = async (className, location, address, schedule,classSize) => {
 //     try {
 //         console.log('createClass function received:', {
 //             className,
-//             location
+//             location,
+//             address,
+//             schedule
 //         });
 
 //         // Get location coordinates
@@ -220,8 +290,11 @@ export const getCurrentUser = async () => {
 //             class_name: className,
 //             created_by: user.$id,
 //             class_location: [JSON.stringify(locationCoords)],
+//             class_address: [JSON.stringify(address)],
+//             class_schedule: [JSON.stringify(schedule)], 
 //             students: [],
-//             attendance_days: []
+//             attendance_days: [],
+//             class_size: classSize
 //         };
 
 //         console.log('Attempting to create class with data:', classData);
@@ -242,20 +315,20 @@ export const getCurrentUser = async () => {
 //     }
 // };
 
-//with update class address
-export const createClass = async (className, location, address, schedule,classSize) => {
+//with push notification
+//with push notification
+//with push notification
+export const createClass = async (className, location, address, schedule, classSize) => {
     try {
-        console.log('createClass function received:', {
+        console.log('Creating class with name, location and address:', {
             className,
             location,
-            address,
-            schedule
+            address
         });
 
-        // Get location coordinates
-        const locationCoords = await getLocationCoordinates();
-        console.log('Location coordinates for class:', locationCoords);
-
+        // Get location coordinates if not provided
+        const locationCoords = location || await getLocationCoordinates();
+        
         const session = await account.getSession('current');
         if (!session) throw new Error('Not authenticated');
 
@@ -270,19 +343,20 @@ export const createClass = async (className, location, address, schedule,classSi
         if (!users.documents.length) throw new Error('User not found');
         const user = users.documents[0];
 
+        // Create properly formatted class data
         const classData = {
             class_id: ID.unique(),
             class_name: className,
             created_by: user.$id,
             class_location: [JSON.stringify(locationCoords)],
             class_address: [JSON.stringify(address)],
-            class_schedule: [JSON.stringify(schedule)], 
+            class_schedule: schedule ? [JSON.stringify(schedule)] : [],
             students: [],
             attendance_days: [],
-            class_size: classSize
+            class_size: classSize || 30
         };
 
-        console.log('Attempting to create class with data:', classData);
+        console.log('Formatted class data:', classData);
 
         const newClass = await databases.createDocument(
             appwriteConfig.databaseId,
@@ -292,6 +366,10 @@ export const createClass = async (className, location, address, schedule,classSi
         );
 
         console.log('Class created successfully:', newClass);
+        
+        // Send push notification to all students about new class
+        // await sendNewClassNotification(newClass);
+        
         return newClass;
 
     } catch (error) {
@@ -299,6 +377,44 @@ export const createClass = async (className, location, address, schedule,classSi
         throw error;
     }
 };
+
+// // Add this helper function for sending new class notifications
+// const sendNewClassNotification = async (classData) => {
+//     try {
+//         // Get all users with student role
+//         const students = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.userCollectionId,
+//             [Query.equal('role', 'student')]
+//         );
+        
+//         // Send notification to each student
+//         for (const student of students.documents) {
+//             if (student.pushToken) {
+//                 // Use Expo Push Notifications API
+//                 await fetch('https://exp.host/--/api/v2/push/send', {
+//                     method: 'POST',
+//                     headers: {
+//                         'Content-Type': 'application/json',
+//                     },
+//                     body: JSON.stringify({
+//                         to: student.pushToken,
+//                         title: 'New Class Available',
+//                         body: `A new class "${classData.class_name}" is now available for enrollment!`,
+//                         data: { 
+//                             classId: classData.class_id,
+//                             className: classData.class_name
+//                         }
+//                     })
+//                 });
+//             }
+//             console.log('Notification sent to student:', student.username);
+//         }
+//     } catch (error) {
+//         console.error('Error sending new class notifications:', error);
+//     }
+// };
+//with end of push notification
 
 
 // Get all classes
@@ -667,7 +783,6 @@ export const getTeacherClasses = async () => {
 }
 
 //for CreateSession.tsx page
-
 // Generate a random 6-character code with letters and numbers
 const generateAttendanceCode = () => {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -697,6 +812,79 @@ const getLocationCoordinates = async () => {
         return { latitude: 0, longitude: 0 };
     }
 };
+
+
+// export const createClassSession = async (classId: string, sessionTitle: string) => {
+//     try {
+//         console.log('\n=== Starting createClassSession ===');
+//         console.log('Input classId:', classId);
+//         console.log('Input sessionTitle:', sessionTitle);
+
+//         // Get the class document
+//         const classes = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.classCollectionId,
+//             [Query.equal('class_id', classId)]
+//         );
+
+//         if (!classes.documents || classes.documents.length === 0) {
+//             throw new Error(`No class found with class_id: ${classId}`);
+//         }
+
+//         const classDoc = classes.documents[0];
+//         console.log('Found class document:', JSON.stringify(classDoc, null, 2));
+
+//         // Get location
+//         const locationCoords = await getLocationCoordinates();
+//         console.log('Location coordinates:', locationCoords);
+
+//         // Create new session object
+//         const newSession = {
+//             session_title: sessionTitle,
+//             date: new Date().toISOString().split('T')[0],
+//             attendance_code: generateAttendanceCode(),
+//             location: locationCoords,
+//             records: []
+//         };
+//         console.log('New session object:', JSON.stringify(newSession, null, 2));
+
+//         // Convert new session to string
+//         const newSessionString = JSON.stringify(newSession);
+
+//         // Handle attendance_days as array of strings
+//         let existingAttendanceDays = Array.isArray(classDoc.attendance_days) 
+//             ? classDoc.attendance_days 
+//             : [];
+
+//         // Add new session as string
+//         existingAttendanceDays.push(newSessionString);
+
+//         console.log('Updated attendance_days array:', JSON.stringify(existingAttendanceDays, null, 2));
+
+//         // Update document
+//         const updatedClass = await databases.updateDocument(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.classCollectionId,
+//             classDoc.$id,
+//             {
+//                 attendance_days: existingAttendanceDays  // Array of strings
+//             }
+//         );
+
+//         console.log('Successfully updated class document');
+//         return updatedClass;
+
+//     } catch (error) {
+//         console.error('=== Error in createClassSession ===');
+//         console.error('Error details:', error);
+//         throw error;
+//     }
+// };
+
+
+
+//with push notification
+//with push notification
 
 
 export const createClassSession = async (classId: string, sessionTitle: string) => {
@@ -756,6 +944,9 @@ export const createClassSession = async (classId: string, sessionTitle: string) 
             }
         );
 
+        // Send notifications to enrolled students
+        await sendSessionCreatedNotifications(classDoc, newSession);
+
         console.log('Successfully updated class document');
         return updatedClass;
 
@@ -765,6 +956,146 @@ export const createClassSession = async (classId: string, sessionTitle: string) 
         throw error;
     }
 };
+
+// Add this helper function for sending session notifications
+const sendSessionCreatedNotifications = async (classDoc, session) => {
+    try {
+        // Parse students array
+        const enrolledStudents = classDoc.students
+            .map(student => {
+                try {
+                    return JSON.parse(student);
+                } catch (error) {
+                    return null;
+                }
+            })
+            .filter(student => student && student.status === 'approved')
+            .map(student => student.student_id);
+        
+        // For each enrolled student, send a notification
+        for (const studentId of enrolledStudents) {
+            try {
+                const student = await databases.getDocument(
+                    appwriteConfig.databaseId,
+                    appwriteConfig.userCollectionId,
+                    studentId
+                );
+                
+                if (student.pushToken) {
+                    // Send notification
+                    await fetch('https://exp.host/--/api/v2/push/send', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            to: student.pushToken,
+                            title: 'New Attendance Session',
+                            body: `${session.session_title} for ${classDoc.class_name} is now available!`,
+                            data: { 
+                                classId: classDoc.class_id,
+                                className: classDoc.class_name,
+                                sessionTitle: session.session_title,
+                                date: session.date
+                            }
+                        })
+                    });
+                    console.log(`Sent notification to student ${studentId}`);
+                }
+            } catch (error) {
+                console.error(`Error sending notification to student ${studentId}:`, error);
+            }
+        }
+    } catch (error) {
+        console.error('Error sending session notifications:', error);
+    }
+};
+
+//end of with push notification
+
+// Add this function to send check-in reminders
+export const sendCheckInReminders = async () => {
+    try {
+        // Get today's date in ISO format (YYYY-MM-DD)
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Get all classes
+        const classes = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.classCollectionId
+        );
+        
+        // For each class, check attendance days
+        for (const classDoc of classes.documents) {
+            if (!classDoc.attendance_days || !Array.isArray(classDoc.attendance_days)) {
+                continue;
+            }
+            
+            // Parse attendance days and find sessions for today
+            const attendanceDays = classDoc.attendance_days.map(day => {
+                try {
+                    return typeof day === 'string' ? JSON.parse(day) : day;
+                } catch (error) {
+                    return null;
+                }
+            }).filter(Boolean);
+            
+            // Find sessions scheduled for today
+            const todaySessions = attendanceDays.filter(day => day.date === today);
+            
+            if (todaySessions.length > 0) {
+                // Get enrolled students for this class
+                const enrolledStudents = classDoc.students
+                    .map(student => {
+                        try {
+                            return JSON.parse(student);
+                        } catch (error) {
+                            return null;
+                        }
+                    })
+                    .filter(student => student && student.status === 'approved')
+                    .map(student => student.student_id);
+                
+                // For each enrolled student, send a notification
+                for (const studentId of enrolledStudents) {
+                    try {
+                        const student = await databases.getDocument(
+                            appwriteConfig.databaseId,
+                            appwriteConfig.userCollectionId,
+                            studentId
+                        );
+                        
+                        if (student.pushToken) {
+                            // Send notification
+                            await fetch('https://exp.host/--/api/v2/push/send', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    to: student.pushToken,
+                                    title: 'Class Check-in Reminder',
+                                    body: `Don't forget to check in for ${classDoc.class_name} today!`,
+                                    data: { 
+                                        classId: classDoc.class_id,
+                                        className: classDoc.class_name,
+                                        sessionTitle: todaySessions[0].session_title
+                                    }
+                                })
+                            });
+                        }
+                    } catch (error) {
+                        console.error(`Error sending reminder to student ${studentId}:`, error);
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error sending check-in reminders:', error);
+    }
+};
+
+
 
 export const getClassSessions = async (classId: string) => {
     try {
@@ -1505,7 +1836,7 @@ export const getClassAddress = async (classId) => {
         }
 
         const classDoc = classDocuments.documents[0];
-        console.log("classDoc:", classDoc)
+        // console.log("classDoc:", classDoc)
         const address = classDoc.class_address && classDoc.class_address[0] ? 
             JSON.parse(classDoc.class_address[0]) : null;
         const schedule = classDoc.class_schedule && classDoc.class_schedule[0] ? 
@@ -1515,7 +1846,7 @@ export const getClassAddress = async (classId) => {
         const location = classDoc.class_location && classDoc.class_location[0] ? 
         JSON.parse(classDoc.class_location[0]) : null;
         
-        console.log("shecudle:",schedule)
+        // console.log("schedule:",schedule)
         return {address,schedule, location, size: classDoc.class_size};
     
         
