@@ -84,3 +84,108 @@ export const useNotifications = () => {
   }
   return context;
 };
+
+// // context/NotificationContext.js
+// import React, { createContext, useState, useContext, useEffect } from 'react';
+// import { getCurrentUser } from '../lib/appwrite';
+
+// const NotificationContext = createContext();
+
+// // Create a reference we can use outside of React components
+// let notificationActions = {
+//   addNotification: () => {},
+//   clearNotifications: () => {}
+// };
+
+// export const NotificationProvider = ({ children }) => {
+//   const [notifications, setNotifications] = useState([]);
+//   const [currentUserRole, setCurrentUserRole] = useState(null);
+//   const [isLoading, setIsLoading] = useState(true);
+
+//   // Fetch user role when provider is mounted
+//   useEffect(() => {
+//     const fetchUserRole = async () => {
+//       try {
+//         const user = await getCurrentUser();
+//         setCurrentUserRole(user.role);
+//       } catch (error) {
+//         console.error('Error fetching user role:', error);
+//       } finally {
+//         setIsLoading(false);
+//       }
+//     };
+
+//     fetchUserRole();
+//   }, []);
+
+//   // Add a notification with the intended role
+//   const addNotification = (title, body, intendedRole = null) => {
+//     const newNotification = {
+//       id: Date.now().toString(),
+//       title,
+//       body,
+//       createdAt: new Date(),
+//       read: false,
+//       intendedRole // This can be 'student', 'teacher', or null (for all roles)
+//     };
+
+//     setNotifications(prev => [newNotification, ...prev]);
+//   };
+
+//   const markAsRead = (id) => {
+//     setNotifications(prev =>
+//       prev.map(notification =>
+//         notification.id === id ? { ...notification, read: true } : notification
+//       )
+//     );
+//   };
+
+//   const markAllAsRead = () => {
+//     setNotifications(prev =>
+//       prev.map(notification => ({ ...notification, read: true }))
+//     );
+//   };
+
+//   const clearNotifications = () => {
+//     setNotifications([]);
+//   };
+
+//   // Filter notifications based on user role
+//   const getFilteredNotifications = () => {
+//     if (!currentUserRole) return [];
+    
+//     return notifications.filter(notification => 
+//       // Keep notification if:
+//       // 1. It's intended for all roles (intendedRole is null)
+//       // 2. It's specifically intended for the current user's role
+//       notification.intendedRole === null || notification.intendedRole === currentUserRole
+//     );
+//   };
+
+//   // Update the global reference to these functions
+//   notificationActions = {
+//     addNotification,
+//     clearNotifications
+//   };
+
+//   const value = {
+//     notifications: getFilteredNotifications(),
+//     addNotification,
+//     markAsRead,
+//     markAllAsRead,
+//     clearNotifications,
+//     currentUserRole,
+//     isLoading
+//   };
+
+//   return (
+//     <NotificationContext.Provider value={value}>
+//       {children}
+//     </NotificationContext.Provider>
+//   );
+// };
+
+// export const useNotifications = () => useContext(NotificationContext);
+
+// // Export the actions for use outside of React components
+// export const getNotificationActions = () => notificationActions;

@@ -3,7 +3,7 @@ import * as Location from 'expo-location';  // Add this import
 import { Client, Account, Avatars, Databases,Storage, ID, Query, AppwriteException } from 'react-native-appwrite';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Notifications from 'expo-notifications';
-
+import { getNotificationActions } from '../context/NotificationContext';
 
 
 // import { Client, Account, ID, Avatars, Databases } from 'appwrite';
@@ -116,6 +116,74 @@ export const  signIn = async (email, password) => {
         throw error; // Throw the original error
     }
 }
+
+
+
+// export const signIn = async (email, password) => {
+//     try { 
+//         // Check for and delete any existing session
+//         try {
+//             await account.deleteSession('current');
+//         } catch (e) {
+//             // Ignore error if no session exists
+//         }
+        
+//         const session = await account.createEmailPasswordSession(email, password);
+
+//         // After successful login, get user's role
+//         const users = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.userCollectionId,
+//             [Query.equal('accountId', session.userId)]
+//         );
+        
+//         if (users.documents.length > 0) {
+//             const user = users.documents[0];
+            
+//             // Get notification actions from the global reference
+//             const { addNotification, clearNotifications } = getNotificationActions();
+            
+//             // Clear previous notifications first
+//             clearNotifications();
+            
+//             // Common welcome notification for all roles
+//             addNotification(
+//                 "Welcome back!",
+//                 "You're logged in successfully.",
+//                 null // null means for all roles
+//             );
+            
+//             // Role-specific notifications
+//             if (user.role === 'student') {
+//                 // Get available classes - ONLY for students
+//                 const classes = await databases.listDocuments(
+//                     appwriteConfig.databaseId,
+//                     appwriteConfig.classCollectionId,
+//                     [], // No query filters to get all classes
+//                     10  // Limit to 10 classes
+//                 );
+                
+//                 if (classes.documents.length > 0) {
+//                     // Get the most recent class
+//                     const recentClass = classes.documents[classes.documents.length - 1];
+                    
+//                     // Send notification with class name - ONLY for students
+//                     addNotification(
+//                         "New Class Available",
+//                         `Class "${recentClass.class_name}" is available for enrollment!`,
+//                         'student' // Only for students
+//                     );
+//                 }
+//             }
+//         }
+        
+//         return session;
+
+//     } catch(error) {
+//         console.log(error);
+//         throw error; // Throw the original error
+//     }
+// }
 
 
 export const createUser = async (email, password, username, role) => {
@@ -1526,7 +1594,14 @@ export const submitAttendance = async (classId, attendanceCode,studentId, locati
 //logout function
 export const logoutUser = async () => {
     try {
+
+        // const { clearNotifications } = getNotificationActions();
+        
+        // // Clear notifications
+        // clearNotifications();
+
         await account.deleteSessions();
+        
         return true;
     } catch (error) {
         console.log("Logout error:", error);

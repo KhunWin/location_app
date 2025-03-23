@@ -521,38 +521,201 @@ const MyClass = () => {
             </SafeAreaView>
         );
     }
+
+    // return (
+    //     <SafeAreaView className="bg-primary h-full">
+    //         <View className="flex-1 px-4">
+    //             <Text className='text-2xl text-white font-psemibold mb-10 text-center'>
+    //                 {className || 'Class Name'}
+    //             </Text>
+
+    //             {/* Class Address Section */}
+    //             {classAddress && (
+    //                 <View className="mb-4">
+    //                     <Text className="text-white text-lg mb-2">Class Address</Text>
+    //                     <Text className="text-gray-300">
+    //                         {`Floor: ${classAddress.floor}, Room: ${classAddress.room}, Building: ${classAddress.building}, Street: ${classAddress.street}`}
+    //                     </Text>
+    //                 </View>
+    //             )}
+    //             {classDetails?.schedule && (
+    //                     <View className="mb-4">
+    //                         <Text className="text-white text-lg mb-2">Class Schedule</Text>
+    //                         {Object.entries(classDetails.schedule).map(([day, time]) => (
+    //                             time && (
+    //                                 <Text key={day} className="text-gray-300">
+    //                                     {day}: {time}
+    //                                 </Text>
+    //                             )
+    //                         ))}
+    //                     </View>
+    //                 )}
+    //             {/* Attendance Section */}      
+    //             {/* Files Section - Visible to both teachers and students */}
+    //             <View className="flex-1 mb-1">
+    //                 <Text className="text-white text-lg mb-2">
+    //                     Class Files
+    //                 </Text>
+    //                 <ScrollView 
+    //                     className="flex-1"
+    //                     contentContainerStyle={{
+    //                         flexDirection: 'row',
+    //                         flexWrap: 'wrap',
+    //                         justifyContent: 'space-between',
+    //                         paddingBottom: 10
+    //                     }}
+    //                 >
+    //                     {files.length > 0 ? (
+    //                         files.map((file, index) => (
+    //                             <View key={file.$id || index} style={{ width: '48%' }}>
+    //                                 <FileItem file={file} />
+    //                             </View>
+    //                         ))
+    //                     ) : (
+    //                         <Text className="text-gray-400 text-center w-full p-4">
+    //                             No files uploaded yet
+    //                         </Text>
+    //                     )}
+    //                 </ScrollView>
+    //             </View>
+    //             {/* Teacher-specific controls */}
+    //             {currentUser?.role === 'teacher' ? (
+    //                 <View className="gap-2 mb-1">
+    //                     <CustomButton 
+    //                         title='View Enrolled Students' 
+    //                         handlePress={handleViewClasses}
+    //                         containerStyle="bg-secondary py-2"
+    //                     />
+
+    //                     <CustomButton 
+    //                         title='Generate Attendance Code' 
+    //                         handlePress={handleGenerateCode}
+    //                         isLoading={isGenerating}
+    //                         containerStyle={"py-2"}
+    //                     />
+
+    //                     <CustomButton 
+    //                         title='Edit Class Details' 
+    //                         handlePress={() => router.push({
+    //                             pathname: '/pages/EditClassDetails',
+    //                             params: { 
+    //                                 classId: classId,
+    //                                 className: className,
+    //                                 classAddress: JSON.stringify(classAddress),
+    //                                 classSchedule: JSON.stringify(classDetails?.schedule),
+    //                                 classSize: classDetails?.size?.toString() || '' // Use size from classDetails
+
+    //                             }
+    //                         })}
+    //                         containerStyle="bg-secondary py-2"
+    //                     />
+                       
+
+    //                     <CustomButton 
+    //                         title='Upload File' 
+    //                         handlePress={() => router.push({
+    //                             pathname: '/fileupload',
+    //                             params: { classId: classId }
+    //                         })}
+    //                         containerStyle="bg-primary py-2"
+    //                     />
+    //                 </View>
+    //             ) : (
+    //                 /* Student check-in section */
+    //                 <View className="mt-4 mb-6 gap-4">
+    //                 {/* Attendance Days Table */}
+    //                 <View className="mb-4">
+    //                     <Text className="text-white text-lg mb-2">Attendance Days</Text>
+    //                     <ScrollView horizontal={false} className="mb-2">
+    //                         <View className="border border-gray-600 rounded-lg mx-2">
+    //                             <View className="flex-row bg-secondary">
+    //                                 <Text className="text-white font-medium p-2 flex-1 w-[25%]">Session</Text>
+    //                                 <Text className="text-white font-medium p-2 flex-1 w-[25%]">Code</Text>
+    //                                 <Text className="text-white font-medium p-2 flex-1 w-[25%]">Date</Text>
+    //                                 <Text className="text-white font-medium p-2 flex-1 w-[25%]">Status</Text>
+    //                             </View>
+    //                             {attendanceDays.map((day, index) => {
+    //                                 const dayData = typeof day === 'string' ? JSON.parse(day) : day;
+    //                                 const record = dayData.records?.find(r => r.student_id === currentUser.$id);
+    //                                 return (
+    //                                     <View key={index} className="flex-row border-t border-gray-600">
+    //                                         <Text className="text-gray-300 p-2 flex-1 w-[25%]">
+    //                                             {dayData.session_title}
+    //                                         </Text>
+    //                                         <Text className="text-gray-300 p-2 flex-1 w-[25%]">
+    //                                             {dayData.attendance_code}
+    //                                         </Text>
+    //                                         <Text className="text-gray-300 p-2 flex-1 w-[25%]">
+    //                                             {new Date(dayData.date).toLocaleDateString()}
+    //                                         </Text>
+    //                                         <View className="p-2 flex-1 w-[25%]">
+    //                                             {record?.status === 'present' ? (
+    //                                                 <Text className="text-green-400">Present</Text>
+    //                                             ) : (
+    //                                                 <TouchableOpacity
+    //                                                     onPress={() => {
+    //                                                         setAttendanceCode(dayData.attendance_code);
+    //                                                         handleCheckIn(true, dayData);
+    //                                                     }}
+    //                                                     className="bg-secondary rounded-lg py-1 px-2"
+    //                                                     disabled={isSubmitting}
+    //                                                 >
+    //                                                     <Text className="text-white text-center">
+    //                                                         {record?.status === 'absent' ? 'Try Again' : 'Check-in'}
+    //                                                     </Text>
+
+    //                                                 </TouchableOpacity>
+    //                                             )}
+    //                                         </View>
+    //                                     </View>
+    //                                 );
+    //                             })}
+    //                         </View>
+    //                     </ScrollView>
+    //                 </View>
+    //                 </View>
+    //             )}
+    //         </View>
+    //     </SafeAreaView>
+    // );
+
+
     return (
         <SafeAreaView className="bg-primary h-full">
             <View className="flex-1 px-4">
-                <Text className='text-2xl text-white font-psemibold mb-10 text-center'>
+                <Text className='text-xl text-white font-psemibold mb-5 text-center'>
                     {className || 'Class Name'}
                 </Text>
-
-                {/* Class Address Section */}
+    
+                {/* Class Address Section - More compact */}
                 {classAddress && (
-                    <View className="mb-4">
-                        <Text className="text-white text-lg mb-2">Class Address</Text>
-                        <Text className="text-gray-300">
+                    <View className="mb-3">
+                        <Text className="text-white text-base mb-1">Class Address</Text>
+                        <Text className="text-gray-300 text-sm">
                             {`Floor: ${classAddress.floor}, Room: ${classAddress.room}, Building: ${classAddress.building}, Street: ${classAddress.street}`}
                         </Text>
                     </View>
                 )}
+                
+                {/* Schedule Section - More compact */}
                 {classDetails?.schedule && (
-                        <View className="mb-4">
-                            <Text className="text-white text-lg mb-2">Class Schedule</Text>
+                    <View className="mb-3">
+                        <Text className="text-white text-base mb-1">Class Schedule</Text>
+                        <View className="flex-row flex-wrap">
                             {Object.entries(classDetails.schedule).map(([day, time]) => (
                                 time && (
-                                    <Text key={day} className="text-gray-300">
+                                    <Text key={day} className="text-gray-300 text-sm mr-3">
                                         {day}: {time}
                                     </Text>
                                 )
                             ))}
                         </View>
-                    )}
-                {/* Attendance Section */}      
-                {/* Files Section - Visible to both teachers and students */}
+                    </View>
+                )}
+                    
+                {/* Files Section - More space for scrolling */}
                 <View className="flex-1 mb-1">
-                    <Text className="text-white text-lg mb-2">
+                    <Text className="text-white text-base mb-1">
                         Class Files
                     </Text>
                     <ScrollView 
@@ -571,85 +734,92 @@ const MyClass = () => {
                                 </View>
                             ))
                         ) : (
-                            <Text className="text-gray-400 text-center w-full p-4">
+                            <Text className="text-gray-400 text-center w-full p-2">
                                 No files uploaded yet
                             </Text>
                         )}
                     </ScrollView>
                 </View>
-                {/* Teacher-specific controls */}
+                
+                {/* Teacher-specific controls - Made more compact */}
                 {currentUser?.role === 'teacher' ? (
-                    <View className="gap-2 mb-1">
-                        <CustomButton 
-                            title='View Enrolled Students' 
-                            handlePress={handleViewClasses}
-                            containerStyle="bg-secondary py-2"
-                        />
-
-                        <CustomButton 
-                            title='Generate Attendance Code' 
-                            handlePress={handleGenerateCode}
-                            isLoading={isGenerating}
-                            containerStyle={"py-2"}
-                        />
-
-                        <CustomButton 
-                            title='Edit Class Details' 
-                            handlePress={() => router.push({
+                    <View className="flex-row flex-wrap justify-between mb-2">
+                        <TouchableOpacity 
+                            onPress={handleViewClasses}
+                            className="bg-blue-500 rounded-lg py-2 px-3 mb-2"
+                            style={{ width: '48%' }}
+                        >
+                            <Text className="text-white text-xs text-center">View Students</Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity 
+                            onPress={handleGenerateCode}
+                            className="bg-blue-500 rounded-lg py-2 px-3 mb-2"
+                            style={{ width: '48%' }}
+                            disabled={isGenerating}
+                        >
+                            <Text className="text-white text-xs text-center">
+                                {isGenerating ? 'Generating...' : 'Attendance Code'}
+                            </Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity 
+                            onPress={() => router.push({
                                 pathname: '/pages/EditClassDetails',
                                 params: { 
                                     classId: classId,
                                     className: className,
                                     classAddress: JSON.stringify(classAddress),
                                     classSchedule: JSON.stringify(classDetails?.schedule),
-                                    classSize: classDetails?.size?.toString() || '' // Use size from classDetails
-
+                                    classSize: classDetails?.size?.toString() || ''
                                 }
                             })}
-                            containerStyle="bg-secondary py-2"
-                        />
-                       
-
-                        <CustomButton 
-                            title='Upload File' 
-                            handlePress={() => router.push({
+                            className="bg-blue-500 rounded-lg py-2 px-3 mb-2"
+                            style={{ width: '48%' }}
+                        >
+                            <Text className="text-white text-xs text-center">Edit Details</Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity 
+                            onPress={() => router.push({
                                 pathname: '/fileupload',
                                 params: { classId: classId }
                             })}
-                            containerStyle="bg-primary py-2"
-                        />
+                            className="bg-blue-500 rounded-lg py-2 px-3 mb-2 border border-gray-500"
+                            style={{ width: '48%' }}
+                        >
+                            <Text className="text-white text-xs text-center">Upload File</Text>
+                        </TouchableOpacity>
                     </View>
                 ) : (
-                    /* Student check-in section */
-                    <View className="mt-4 mb-6 gap-4">
-                    {/* Attendance Days Table */}
-                    <View className="mb-4">
-                        <Text className="text-white text-lg mb-2">Attendance Days</Text>
-                        <ScrollView horizontal={false} className="mb-2">
-                            <View className="border border-gray-600 rounded-lg mx-2">
+                    /* Student check-in section - More compact */
+                    <View className="mt-2 mb-4">
+                        <Text className="text-white text-base mb-1">Attendance Days</Text>
+                        <ScrollView horizontal={false} className="mb-2" style={{ maxHeight: 150 }}>
+                            <View className="border border-gray-600 rounded-lg mx-1">
                                 <View className="flex-row bg-secondary">
-                                    <Text className="text-white font-medium p-2 flex-1 w-[25%]">Session</Text>
-                                    <Text className="text-white font-medium p-2 flex-1 w-[25%]">Code</Text>
-                                    <Text className="text-white font-medium p-2 flex-1 w-[25%]">Date</Text>
-                                    <Text className="text-white font-medium p-2 flex-1 w-[25%]">Status</Text>
+                                    <Text className="text-white font-medium p-1 flex-1 w-[25%] text-xs">Session</Text>
+                                    <Text className="text-white font-medium p-1 flex-1 w-[25%] text-xs">Code</Text>
+                                    <Text className="text-white font-medium p-1 flex-1 w-[25%] text-xs">Date</Text>
+                                    <Text className="text-white font-medium p-1 flex-1 w-[25%] text-xs">Status</Text>
                                 </View>
                                 {attendanceDays.map((day, index) => {
                                     const dayData = typeof day === 'string' ? JSON.parse(day) : day;
                                     const record = dayData.records?.find(r => r.student_id === currentUser.$id);
                                     return (
                                         <View key={index} className="flex-row border-t border-gray-600">
-                                            <Text className="text-gray-300 p-2 flex-1 w-[25%]">
+                                            <Text className="text-gray-300 p-1 flex-1 w-[25%] text-xs">
                                                 {dayData.session_title}
                                             </Text>
-                                            <Text className="text-gray-300 p-2 flex-1 w-[25%]">
+                                            <Text className="text-gray-300 p-1 flex-1 w-[25%] text-xs">
                                                 {dayData.attendance_code}
                                             </Text>
-                                            <Text className="text-gray-300 p-2 flex-1 w-[25%]">
+                                            <Text className="text-gray-300 p-1 flex-1 w-[25%] text-xs">
                                                 {new Date(dayData.date).toLocaleDateString()}
                                             </Text>
-                                            <View className="p-2 flex-1 w-[25%]">
+                                            <View className="p-1 flex-1 w-[25%]">
                                                 {record?.status === 'present' ? (
-                                                    <Text className="text-green-400">Present</Text>
+                                                    <Text className="text-green-400 text-xs">Present</Text>
                                                 ) : (
                                                     <TouchableOpacity
                                                         onPress={() => {
@@ -659,10 +829,9 @@ const MyClass = () => {
                                                         className="bg-secondary rounded-lg py-1 px-2"
                                                         disabled={isSubmitting}
                                                     >
-                                                        <Text className="text-white text-center">
+                                                        <Text className="text-white text-center text-xs">
                                                             {record?.status === 'absent' ? 'Try Again' : 'Check-in'}
                                                         </Text>
-
                                                     </TouchableOpacity>
                                                 )}
                                             </View>
@@ -672,11 +841,11 @@ const MyClass = () => {
                             </View>
                         </ScrollView>
                     </View>
-                    </View>
                 )}
             </View>
         </SafeAreaView>
     );
+
 };
 
 export default MyClass;

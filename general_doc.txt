@@ -265,6 +265,6 @@ have to enter the code. easier to check-in.
 ##add report for home page (let the user download their information)
 ## add get direction to specific location 
 ## add get duration to the class location 
-##
+## let the user upload the image for their class. 
 
 
