@@ -88,7 +88,8 @@ const ViewCheckin = () => {
                                 <Text className="flex-1 text-white font-medium">SID</Text>
                                 <Text className="flex-1 text-white font-medium">Name</Text>
                                 <Text className="flex-1 text-white font-medium">Status</Text>
-                                <Text className="flex-1 text-white font-medium">Status Update</Text>
+                                <Text className="flex-1 text-white font-medium">Check-in</Text>
+                                <Text className="flex-1 text-white font-medium">Check-out</Text>
                             </View>
 
                             {/* Attendance Records */}
@@ -121,6 +122,15 @@ const ViewCheckin = () => {
                                                 minute: '2-digit',
                                                 hour12: true
                                             })}
+                                        </Text>
+                                        <Text className="flex-1 text-white text-left">
+                                            {record.checkout_time ? 
+                                                new Date(record.checkout_time).toLocaleTimeString('en-US', {
+                                                    hour: 'numeric',
+                                                    minute: '2-digit',
+                                                    hour12: true
+                                                }) 
+                                                : ''}
                                         </Text>
                                     </View>
                                 ))

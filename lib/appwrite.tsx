@@ -1574,12 +1574,19 @@ export const updateAttendanceRecord = async (classDoc, session, studentId, statu
             throw new Error('Session not found');
         }
 
+        const currentTime = new Date().toISOString();
+
         // Create new record with checkout handling
         const newRecord = {
+            // student_id: studentId,
+            // submission_time: new Date().toISOString(),
+            // status: isCheckout ? 'checked-out' : status, // Change status to 'checked-out' when checking out
+            // checkout_time: isCheckout ? new Date().toISOString() : null
+
             student_id: studentId,
-            submission_time: new Date().toISOString(),
-            status: isCheckout ? 'checked-out' : status, // Change status to 'checked-out' when checking out
-            checkout_time: isCheckout ? new Date().toISOString() : null
+            submission_time: null, // Initialize as null
+            status: isCheckout ? 'checked-out' : status,
+            checkout_time: isCheckout ? currentTime : null
         };
 
         // Initialize or update records array
@@ -1593,11 +1600,28 @@ export const updateAttendanceRecord = async (classDoc, session, studentId, statu
         );
 
         if (existingRecordIndex !== -1) {
-            // Preserve original check-in time if updating
+            // // Preserve original check-in time if updating
+            // const existingRecord = attendanceDays[sessionIndex].records[existingRecordIndex];
+            // newRecord.submission_time = existingRecord.submission_time;
+            // attendanceDays[sessionIndex].records[existingRecordIndex] = newRecord;
+
+            // const existingRecord = attendanceDays[sessionIndex].records[existingRecordIndex];
+            // // Keep existing submission_time unless status is 'present'
+            // newRecord.submission_time = status === 'present' ? 
+            //     currentTime : existingRecord.submission_time;
+            // attendanceDays[sessionIndex].records[existingRecordIndex] = newRecord;
+
             const existingRecord = attendanceDays[sessionIndex].records[existingRecordIndex];
-            newRecord.submission_time = existingRecord.submission_time;
+            // Preserve existing submission_time when checking out
+            newRecord.submission_time = isCheckout ? 
+                existingRecord.submission_time : // Keep original time when checking out
+                (status === 'present' ? currentTime : existingRecord.submission_time); // Update only for new present status
             attendanceDays[sessionIndex].records[existingRecordIndex] = newRecord;
+
         } else {
+            // attendanceDays[sessionIndex].records.push(newRecord);
+            // For new records, set submission_time only if status is present
+            newRecord.submission_time = status === 'present' ? currentTime : null;
             attendanceDays[sessionIndex].records.push(newRecord);
         }
 
@@ -1614,6 +1638,7 @@ export const updateAttendanceRecord = async (classDoc, session, studentId, statu
             }
         );
 
+        // console.log("this is in updateAttendanceRecord", result)
         return result;
     } catch (error) {
         console.error('Error updating attendance record:', error);
