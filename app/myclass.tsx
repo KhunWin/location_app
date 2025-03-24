@@ -113,9 +113,9 @@ const MyClass = () => {
 
     const loadFiles = async () => {
         try {
-            console.log('Attempting to load files for class:', classId);
+            // console.log('Attempting to load files for class:', classId);
             const filesList = await listFiles(classId);
-            console.log('Files list:', filesList)
+            // console.log('Files list:', filesList)
             
             // Add detailed logging
             if (!filesList || filesList.length === 0) {
@@ -307,26 +307,89 @@ const MyClass = () => {
         }
     };
     
-    const handleCheckIn = async (skipCodeCheck = false, dayData = null) => {
+    // const handleCheckIn = async (skipCodeCheck = false, dayData = null) => {
+    //     if (!currentUser) {
+    //         // console.error('No user data available');
+    //         Alert.alert('Error', 'Please wait for user data to load');
+    //         return;
+    //     }
+
+    //     // Only check attendance code if not skipping code check
+    //     if (!skipCodeCheck && !attendanceCode.trim()) {
+    //         Alert.alert('Error', 'Please enter an attendance code');
+    //         return;
+    //     }
+
+    //     // Verify enrollment first
+    //     const joinedClasses = parseJoinedClasses(currentUser.joined_classes);
+    //     const enrollment = joinedClasses.find(cls => cls.class_id === classId);
+
+    //     if (!enrollment) {
+    //         Alert.alert('Error', 'You are not enrolled in this class');
+    //         return;
+    //     }
+
+    //     if (enrollment.status !== 'approved') {
+    //         Alert.alert('Error', 'Your enrollment is pending approval');
+    //         return;
+    //     }
+
+    //     setIsSubmitting(true);
+    //     try {
+    //         // Get fresh location data only when checking in
+    //         const userLocation = await getCurrentLocation();
+    //         if (!userLocation) {
+    //             throw new Error('Unable to get your current location. Please ensure GPS is enabled.');
+    //         }
+
+    //         // Submit attendance
+    //         const result = await submitAttendance(
+    //             classId,
+    //             // attendanceCode.trim(),
+    //             skipCodeCheck ? dayData.attendance_code : attendanceCode.trim(), // Use the session's code if skipping check
+
+    //             currentUser.$id,
+    //             userLocation,
+    //             currentUser
+    //         );
+
+    //         Alert.alert(
+    //             'Success',
+    //             `Attendance marked as ${result.status}` +
+    //             (result.status === 'absent' ? 
+    //                 ` (${Math.round(result.distance)}m from class location)` : 
+    //                 '')
+    //         );
+
+    //         // setAttendanceCode('');
+    //         if (!skipCodeCheck) {
+    //             setAttendanceCode('');
+    //         }
+    //         // Refresh the attendance data after successful submission
+    //         await refreshAttendanceData();
+
+    //     } catch (error) {
+    //         console.error('Check-in error:', error);
+    //         Alert.alert('Error', error.message || 'Failed to check in');
+    //     } finally {
+    //         setIsSubmitting(false);
+    //     }
+    // };
+
+    // Update handleCheckIn function
+    
+    
+    const handleCheckIn = async (skipCodeCheck = false, dayData = null, isCheckout = false) => {
         if (!currentUser) {
-            // console.error('No user data available');
             Alert.alert('Error', 'Please wait for user data to load');
             return;
         }
 
-        // // Skip attendance code check if code was set from button click
-        // if (!attendanceCode.trim()) {
-        //     Alert.alert('Error', 'Please enter an attendance code');
-        //     return;
-        // }
-
-        // Only check attendance code if not skipping code check
         if (!skipCodeCheck && !attendanceCode.trim()) {
             Alert.alert('Error', 'Please enter an attendance code');
             return;
         }
 
-        // Verify enrollment first
         const joinedClasses = parseJoinedClasses(currentUser.joined_classes);
         const enrollment = joinedClasses.find(cls => cls.class_id === classId);
 
@@ -342,36 +405,33 @@ const MyClass = () => {
 
         setIsSubmitting(true);
         try {
-            // Get fresh location data only when checking in
             const userLocation = await getCurrentLocation();
             if (!userLocation) {
                 throw new Error('Unable to get your current location. Please ensure GPS is enabled.');
             }
 
-            // Submit attendance
             const result = await submitAttendance(
                 classId,
-                // attendanceCode.trim(),
-                skipCodeCheck ? dayData.attendance_code : attendanceCode.trim(), // Use the session's code if skipping check
-
+                skipCodeCheck ? dayData.attendance_code : attendanceCode.trim(),
                 currentUser.$id,
                 userLocation,
-                currentUser
+                currentUser,
+                isCheckout // Add isCheckout parameter
             );
 
             Alert.alert(
                 'Success',
-                `Attendance marked as ${result.status}` +
-                (result.status === 'absent' ? 
-                    ` (${Math.round(result.distance)}m from class location)` : 
-                    '')
+                isCheckout ? 
+                    'Successfully checked out' : 
+                    `Attendance marked as ${result.status}` +
+                    (result.status === 'absent' ? 
+                        ` (${Math.round(result.distance)}m from class location)` : 
+                        '')
             );
 
-            // setAttendanceCode('');
             if (!skipCodeCheck) {
                 setAttendanceCode('');
             }
-            // Refresh the attendance data after successful submission
             await refreshAttendanceData();
 
         } catch (error) {
@@ -454,7 +514,7 @@ const MyClass = () => {
             }
         };
 
-        const handleDeleteFile = async () => {
+    const handleDeleteFile = async () => {
             try {
                 Alert.alert(
                     "Delete File",
@@ -801,9 +861,10 @@ const MyClass = () => {
                             <View className="border border-gray-600 rounded-lg mx-1">
                                 <View className="flex-row bg-secondary">
                                     <Text className="text-white font-medium p-1 flex-1 w-[25%] text-xs">Session</Text>
-                                    <Text className="text-white font-medium p-1 flex-1 w-[25%] text-xs">Code</Text>
+                                    {/* <Text className="text-white font-medium p-1 flex-1 w-[25%] text-xs">Code</Text> */}
                                     <Text className="text-white font-medium p-1 flex-1 w-[25%] text-xs">Date</Text>
                                     <Text className="text-white font-medium p-1 flex-1 w-[25%] text-xs">Status</Text>
+                                    <Text className="text-white font-medium p-1 flex-1 w-[30%] text-xs">Check-out</Text>
                                 </View>
                                 {attendanceDays.map((day, index) => {
                                     const dayData = typeof day === 'string' ? JSON.parse(day) : day;
@@ -813,14 +874,28 @@ const MyClass = () => {
                                             <Text className="text-gray-300 p-1 flex-1 w-[25%] text-xs">
                                                 {dayData.session_title}
                                             </Text>
-                                            <Text className="text-gray-300 p-1 flex-1 w-[25%] text-xs">
+                                            {/* <Text className="text-gray-300 p-1 flex-1 w-[25%] text-xs">
                                                 {dayData.attendance_code}
-                                            </Text>
+                                            </Text> */}
                                             <Text className="text-gray-300 p-1 flex-1 w-[25%] text-xs">
                                                 {new Date(dayData.date).toLocaleDateString()}
                                             </Text>
+                                            {/* <Text className={`p-1 flex-1 w-[25%] text-xs ${record?.status === 'present' ? 'text-green-400' : 'text-gray-300'}`}>
+                                                {record?.status === 'present' ? 'Present' : 'Not checked in'}
+                                            </Text> */}
+                                            <Text className={`p-1 flex-1 w-[25%] text-xs ${
+                                                record?.status === 'present' ? 'text-green-400' : 
+                                                record?.status === 'checked-out' ? 'text-blue-400' : 
+                                                'text-gray-300'
+                                            }`}>
+                                                {record?.status === 'present' ? 'Present' : 
+                                                 record?.status === 'checked-out' ? 'Check-out' : 
+                                                 'Not checked in'}
+                                            </Text>
                                             <View className="p-1 flex-1 w-[25%]">
-                                                {record?.status === 'present' ? (
+
+
+                                                {/* {record?.status === 'present' ? (
                                                     <Text className="text-green-400 text-xs">Present</Text>
                                                 ) : (
                                                     <TouchableOpacity
@@ -835,7 +910,86 @@ const MyClass = () => {
                                                             {record?.status === 'absent' ? 'Try Again' : 'Check-in'}
                                                         </Text>
                                                     </TouchableOpacity>
+                                                )} */}
+
+                                                {/* {record?.status === 'present' ? (
+                                                    <View>
+                                                        {record.checkout_time ? (
+                                                            <Text className="text-blue-400 text-xs">Checked Out</Text>
+                                                        ) : (
+                                                            <TouchableOpacity
+                                                                onPress={() => {
+                                                                    setAttendanceCode(dayData.attendance_code);
+                                                                    handleCheckIn(true, dayData, true); // Added isCheckout parameter
+                                                                }}
+                                                                className="bg-blue-500 rounded-lg py-1 px-2"
+                                                                disabled={isSubmitting}
+                                                            >
+                                                                <Text className="text-white text-center text-xs">
+                                                                    Check Out
+                                                                </Text>
+                                                            </TouchableOpacity>
+                                                        )}
+                                                    </View>
+                                                ) : (
+                                                    <TouchableOpacity
+                                                        onPress={() => {
+                                                            setAttendanceCode(dayData.attendance_code);
+                                                            handleCheckIn(true, dayData);
+                                                        }}
+                                                        className="bg-secondary rounded-lg py-1 px-2"
+                                                        disabled={isSubmitting}
+                                                    >
+                                                        <Text className="text-white text-center text-xs">
+                                                            {record?.status === 'absent' ? 'Try Again' : 'Check-in'}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                )} */}
+
+                                                {record?.status === 'present' && !record.checkout_time ? (
+                                                    <TouchableOpacity
+                                                        onPress={() => {
+                                                            setAttendanceCode(dayData.attendance_code);
+                                                            handleCheckIn(true, dayData, true);
+                                                        }}
+                                                        className="bg-blue-500 rounded-lg py-1 px-2"
+                                                        disabled={isSubmitting}
+                                                    >
+                                                        <Text className="text-white text-center text-xs">
+                                                            Check Out
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                ) : record?.checkout_time ? (
+                                                    <TouchableOpacity
+                                                        onPress={() => {
+                                                            setAttendanceCode(dayData.attendance_code);
+                                                            handleCheckIn(true, dayData);
+                                                        }}
+                                                        className="bg-secondary rounded-lg py-1 px-2"
+                                                        disabled={isSubmitting}
+                                                    >
+                                                        <Text className="text-white text-center text-xs">
+                                                            Check In
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                ) : (
+                                                    <TouchableOpacity
+                                                        onPress={() => {
+                                                            setAttendanceCode(dayData.attendance_code);
+                                                            handleCheckIn(true, dayData, false);
+                                                        }}
+                                                        className="bg-secondary rounded-lg py-1 px-2"
+                                                        disabled={isSubmitting}
+                                                    >
+                                                        <Text className="text-white text-center text-xs">
+                                                            {record?.status === 'absent' ? 'Try Again' : 'Check-in'}
+                                                        </Text>
+                                                    </TouchableOpacity>
                                                 )}
+
+
+
+
                                             </View>
                                         </View>
                                     );

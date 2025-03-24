@@ -1469,14 +1469,92 @@ export const findAttendanceSession = async (classId, attendanceCode, studentId, 
     }
 };
 
-// Update updateAttendanceRecord function
-export const updateAttendanceRecord = async (classDoc, session, studentId, status) => {
+// Update updateAttendanceRecord function without checkout
+// export const updateAttendanceRecord = async (classDoc, session, studentId, status, isCheckout) => {
+//     try {
+//         console.log('Updating attendance record:', {
+//             classId: classDoc.class_id,
+//             sessionCode: session.attendance_code,
+//             studentId,
+//             status,
+//             isCheckout
+//         });
+
+//         // Parse existing attendance days
+//         let attendanceDays = classDoc.attendance_days.map(day => {
+//             if (typeof day === 'string') {
+//                 return JSON.parse(day);
+//             }
+//             return day;
+//         });
+
+//         // Find the session to update
+//         const sessionIndex = attendanceDays.findIndex(
+//             day => day.attendance_code === session.attendance_code
+//         );
+
+//         if (sessionIndex === -1) {
+//             throw new Error('Session not found');
+//         }
+
+//         // Create new record
+//         const newRecord = {
+//             student_id: studentId,
+//             submission_time: new Date().toISOString(),
+//             status: status,
+//             checkout_time: isCheckout ? new Date().toISOString() : null
+//         };
+
+//         // Initialize or update records array
+//         if (!attendanceDays[sessionIndex].records) {
+//             attendanceDays[sessionIndex].records = [];
+//         }
+
+//         // Check for existing record
+//         const existingRecordIndex = attendanceDays[sessionIndex].records.findIndex(
+//             record => record.student_id === studentId
+//         );
+
+//         if (existingRecordIndex !== -1) {
+//             // Update existing record
+//             if (isCheckout) {
+//                 newRecord.submission_time = attendanceDays[sessionIndex].records[existingRecordIndex].submission_time;
+//             }
+//             attendanceDays[sessionIndex].records[existingRecordIndex] = newRecord;
+//         } else {
+//             // Add new record
+//             attendanceDays[sessionIndex].records.push(newRecord);
+//         }
+
+//         // Convert attendance days back to strings
+//         const updatedAttendanceDays = attendanceDays.map(day => JSON.stringify(day));
+
+//         // Update document
+//         const result = await databases.updateDocument(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.classCollectionId,
+//             classDoc.$id,
+//             {
+//                 attendance_days: updatedAttendanceDays
+//             }
+//         );
+
+//         console.log('Database update result:', result);
+//         return result;
+//     } catch (error) {
+//         console.error('Error updating attendance record:', error);
+//         throw error;
+//     }
+// };
+
+export const updateAttendanceRecord = async (classDoc, session, studentId, status, isCheckout = false) => {
     try {
         console.log('Updating attendance record:', {
             classId: classDoc.class_id,
             sessionCode: session.attendance_code,
             studentId,
-            status
+            status,
+            isCheckout
         });
 
         // Parse existing attendance days
@@ -1496,11 +1574,12 @@ export const updateAttendanceRecord = async (classDoc, session, studentId, statu
             throw new Error('Session not found');
         }
 
-        // Create new record
+        // Create new record with checkout handling
         const newRecord = {
             student_id: studentId,
             submission_time: new Date().toISOString(),
-            status: status
+            status: isCheckout ? 'checked-out' : status, // Change status to 'checked-out' when checking out
+            checkout_time: isCheckout ? new Date().toISOString() : null
         };
 
         // Initialize or update records array
@@ -1514,10 +1593,11 @@ export const updateAttendanceRecord = async (classDoc, session, studentId, statu
         );
 
         if (existingRecordIndex !== -1) {
-            // Update existing record
+            // Preserve original check-in time if updating
+            const existingRecord = attendanceDays[sessionIndex].records[existingRecordIndex];
+            newRecord.submission_time = existingRecord.submission_time;
             attendanceDays[sessionIndex].records[existingRecordIndex] = newRecord;
         } else {
-            // Add new record
             attendanceDays[sessionIndex].records.push(newRecord);
         }
 
@@ -1534,7 +1614,6 @@ export const updateAttendanceRecord = async (classDoc, session, studentId, statu
             }
         );
 
-        console.log('Database update result:', result);
         return result;
     } catch (error) {
         console.error('Error updating attendance record:', error);
@@ -1542,8 +1621,9 @@ export const updateAttendanceRecord = async (classDoc, session, studentId, statu
     }
 };
 
+
 // Update submitAttendance function
-export const submitAttendance = async (classId, attendanceCode,studentId, location, currentUser) => {
+export const submitAttendance = async (classId, attendanceCode,studentId, location, currentUser, isCheckout) => {
     try {
         // console.log('Starting attendance submission:', {
         //     classId,
@@ -1583,7 +1663,7 @@ export const submitAttendance = async (classId, attendanceCode,studentId, locati
         const status = distance <= 50 ? 'present' : 'absent';
 
         // Update attendance record
-        const result = await updateAttendanceRecord(classDoc, session, studentId, status);
+        const result = await updateAttendanceRecord(classDoc, session, studentId, status, isCheckout);
 
         return {
             status,
