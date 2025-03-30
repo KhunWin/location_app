@@ -3,8 +3,11 @@ import * as Location from 'expo-location';  // Add this import
 import { Client, Account, Avatars, Databases,Storage, ID, Query, AppwriteException } from 'react-native-appwrite';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Notifications from 'expo-notifications';
-import { getNotificationActions } from '../context/NotificationContext';
+// import { getNotificationActions } from '../context/NotificationContext';
+import { sendNewClassNotification, sendSessionCreatedNotification } from '../services/NotificationService';
 
+// Export utilities needed across the app
+export { ID, Query };  // Make sure to export Query
 
 // import { Client, Account, ID, Avatars, Databases } from 'appwrite';
 export const appwriteConfig = {
@@ -16,6 +19,7 @@ export const appwriteConfig = {
     classCollectionId: '6770252d001271cb06f6',
     fileCollectionId: '67ad50fe0007a8b0f20a',
     storageId: '67330bfe001b740c30af',
+    notificationCollectionId: '67e95ebb003172e6f91a'
 
 }
 
@@ -32,6 +36,8 @@ export const avatars = new Avatars(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);  // Add this line
 
+export { client };  // Make sure to export the client
+
 
 // //this function is showing notification even when there is no new class.
 export const  signIn = async (email, password) => {
@@ -39,15 +45,6 @@ export const  signIn = async (email, password) => {
         // Check for and delete any existing session
         try {
             await account.deleteSession('current');
-
-            // // In your login function, add this after successful login
-            // await Notifications.scheduleNotificationAsync({
-            //     content: {
-            //     title: "Welcome back!",
-            //     body: "You have new class notifications to check.",
-            //     },
-            //     trigger: null, // Show immediately
-            // });
 
         } catch (e) {
             // Ignore error if no session exists
@@ -65,49 +62,49 @@ export const  signIn = async (email, password) => {
         if (users.documents.length > 0) {
             const user = users.documents[0];
             
-            // If student, show available classes
-            if (user.role === 'student') {
-                // Get available classes
-                const classes = await databases.listDocuments(
-                    appwriteConfig.databaseId,
-                    appwriteConfig.classCollectionId,
-                    [], // No query filters to get all classes
-                    10  // Limit to 10 classes
-                );
+            // // If student, show available classes
+            // if (user.role === 'student') {
+            //     // Get available classes
+            //     const classes = await databases.listDocuments(
+            //         appwriteConfig.databaseId,
+            //         appwriteConfig.classCollectionId,
+            //         [], // No query filters to get all classes
+            //         10  // Limit to 10 classes
+            //     );
                 
-                if (classes.documents.length > 0) {
-                    // Get the most recent class
-                    const recentClass = classes.documents[classes.documents.length - 1];
+            //     if (classes.documents.length > 0) {
+            //         // Get the most recent class
+            //         const recentClass = classes.documents[classes.documents.length - 1];
                     
-                    // Send notification with class name
-                    await Notifications.scheduleNotificationAsync({
-                        content: {
-                            title: "Welcome back!",
-                            body: `New class "${recentClass.class_name}" is available for enrollment!`,
-                        },
-                        trigger: null, // Show immediately
-                    });
-                } else {
-                    // No classes available
-                    await Notifications.scheduleNotificationAsync({
-                        content: {
-                            title: "Welcome back!",
-                            body: "No classes available at the moment.",
-                        },
-                        trigger: null,
-                    });
-                }
-            } else {
+            //         // Send notification with class name
+            //         await Notifications.scheduleNotificationAsync({
+            //             content: {
+            //                 title: "Welcome back!",
+            //                 body: `New class "${recentClass.class_name}" is available for enrollment!`,
+            //             },
+            //             trigger: null, // Show immediately
+            //         });
+            //     } else {
+            //         // No classes available
+            //         await Notifications.scheduleNotificationAsync({
+            //             content: {
+            //                 title: "Welcome back!",
+            //                 body: "No classes available at the moment.",
+            //             },
+            //             trigger: null,
+            //         });
+            //     }
+            // } else {
                 // For teachers or other roles
-                await Notifications.scheduleNotificationAsync({
-                    content: {
-                        title: "Welcome back!",
-                        body: "You're logged in successfully.",
-                    },
-                    trigger: null,
-                });
+            await Notifications.scheduleNotificationAsync({
+                content: {
+                    title: "Welcome back!",
+                    body: "You're logged in successfully.",
+                },
+                trigger: null,
+            });
             }
-        }
+        
         
         return session;
 
@@ -117,73 +114,6 @@ export const  signIn = async (email, password) => {
     }
 }
 
-
-
-// export const signIn = async (email, password) => {
-//     try { 
-//         // Check for and delete any existing session
-//         try {
-//             await account.deleteSession('current');
-//         } catch (e) {
-//             // Ignore error if no session exists
-//         }
-        
-//         const session = await account.createEmailPasswordSession(email, password);
-
-//         // After successful login, get user's role
-//         const users = await databases.listDocuments(
-//             appwriteConfig.databaseId,
-//             appwriteConfig.userCollectionId,
-//             [Query.equal('accountId', session.userId)]
-//         );
-        
-//         if (users.documents.length > 0) {
-//             const user = users.documents[0];
-            
-//             // Get notification actions from the global reference
-//             const { addNotification, clearNotifications } = getNotificationActions();
-            
-//             // Clear previous notifications first
-//             clearNotifications();
-            
-//             // Common welcome notification for all roles
-//             addNotification(
-//                 "Welcome back!",
-//                 "You're logged in successfully.",
-//                 null // null means for all roles
-//             );
-            
-//             // Role-specific notifications
-//             if (user.role === 'student') {
-//                 // Get available classes - ONLY for students
-//                 const classes = await databases.listDocuments(
-//                     appwriteConfig.databaseId,
-//                     appwriteConfig.classCollectionId,
-//                     [], // No query filters to get all classes
-//                     10  // Limit to 10 classes
-//                 );
-                
-//                 if (classes.documents.length > 0) {
-//                     // Get the most recent class
-//                     const recentClass = classes.documents[classes.documents.length - 1];
-                    
-//                     // Send notification with class name - ONLY for students
-//                     addNotification(
-//                         "New Class Available",
-//                         `Class "${recentClass.class_name}" is available for enrollment!`,
-//                         'student' // Only for students
-//                     );
-//                 }
-//             }
-//         }
-        
-//         return session;
-
-//     } catch(error) {
-//         console.log(error);
-//         throw error; // Throw the original error
-//     }
-// }
 
 
 export const createUser = async (email, password, username, role) => {
@@ -384,70 +314,555 @@ export const getCurrentUser = async () => {
 // };
 
 //with push notification
-//with push notification
-//with push notification
-export const createClass = async (className, location, address, schedule, classSize, imageUrl) => {
-    try {
-        console.log('Creating class with name, location and address:', {
-            className,
-            location,
-            address,
-            imageUrl
-        });
+// //with push notification
+// export const createClass = async (className, location, address, schedule, classSize, imageUrl) => {
+//     try {
+//         // console.log('Creating class with name, location and address:', {
+//         //     className,
+//         //     location,
+//         //     address,
+//         //     imageUrl
+//         // });
 
-        // Get location coordinates if not provided
-        const locationCoords = location || await getLocationCoordinates();
+//         // Get location coordinates if not provided
+//         const locationCoords = location || await getLocationCoordinates();
         
-        const session = await account.getSession('current');
-        if (!session) throw new Error('Not authenticated');
+//         const session = await account.getSession('current');
+//         if (!session) throw new Error('Not authenticated');
 
-        const users = await databases.listDocuments(
-            appwriteConfig.databaseId,
-            appwriteConfig.userCollectionId,
-            [
-                Query.equal('accountId', session.userId)
-            ]
-        );
+//         const users = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.userCollectionId,
+//             [
+//                 Query.equal('accountId', session.userId)
+//             ]
+//         );
 
-        if (!users.documents.length) throw new Error('User not found');
-        const user = users.documents[0];
+//         if (!users.documents.length) throw new Error('User not found');
+//         const user = users.documents[0];
 
-        // Create properly formatted class data
-        const classData = {
-            class_id: ID.unique(),
-            class_name: className,
-            created_by: user.$id,
-            class_location: [JSON.stringify(locationCoords)],
-            class_address: [JSON.stringify(address)],
-            class_schedule: schedule ? [JSON.stringify(schedule)] : [],
-            class_image: imageUrl,
-            students: [],
-            attendance_days: [],
-            class_size: classSize || 30
+//         // Create properly formatted class data
+//         const classData = {
+//             class_id: ID.unique(),
+//             class_name: className,
+//             created_by: user.$id,
+//             class_location: [JSON.stringify(locationCoords)],
+//             class_address: [JSON.stringify(address)],
+//             class_schedule: schedule ? [JSON.stringify(schedule)] : [],
+//             class_image: imageUrl,
+//             students: [],
+//             attendance_days: [],
+//             class_size: classSize || 30
             
-        };
+//         };
 
-        console.log('Formatted class data:', classData);
+//         console.log('Formatted class data:', classData);
 
-        const newClass = await databases.createDocument(
-            appwriteConfig.databaseId,
-            appwriteConfig.classCollectionId,
-            ID.unique(),
-            classData
-        );
+//         const newClass = await databases.createDocument(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.classCollectionId,
+//             ID.unique(),
+//             classData
+//         );
 
-        console.log('Class created successfully:', newClass);
+//         console.log('Class created successfully:', newClass);
         
-        // Send push notification to all students about new class
-        // await sendNewClassNotification(newClass);
-        
-        return newClass;
+//         // Send push notification to all students about new class
+//         // await sendNewClassNotification(newClass);
 
-    } catch (error) {
-        console.error('Error in createClass:', error);
-        throw error;
-    }
-};
+//         // Send notifications to all students about the new class
+//         // Get current user's session
+//         const currentSession = await account.getSession('current');
+//         const students = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.userCollectionId,
+//             [Query.equal('role', 'student'),
+//                 Query.notEqual('accountId', currentSession.userId) // Exclude current user
+//             ]
+//         );
+//         console.log("list of students to notify:", students)
+//         // Send notification to each student
+//         for (const student of students.documents) {
+//             await Notifications.scheduleNotificationAsync({
+//                 content: {
+//                     title: "New Class Available!",
+//                     body: `A new class "${className}" is now available for enrollment!`,
+//                     data: { classId: classData.class_id }
+//                 },
+//                 trigger: null,
+//             });
+//         }
+//         //end of push notification
+
+//         return newClass;
+
+//     } catch (error) {
+//         console.error('Error in createClass:', error);
+//         throw error;
+//     }
+// };
+
+
+// export const createClass = async (className, location, address, schedule, classSize, imageUrl) => {
+//     try {
+//         console.log('Creating class with name:', className);
+
+//         // Get location coordinates if not provided
+//         const locationCoords = location || await getLocationCoordinates();
+        
+//         const session = await account.getSession('current');
+//         if (!session) throw new Error('Not authenticated');
+
+//         const users = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.userCollectionId,
+//             [
+//                 Query.equal('accountId', session.userId)
+//             ]
+//         );
+
+//         if (!users.documents.length) throw new Error('User not found');
+//         const user = users.documents[0];
+        
+//         console.log('Class creator details:', {
+//             userId: user.$id,
+//             username: user.username,
+//             role: user.role
+//         });
+
+//         // Create properly formatted class data
+//         const classData = {
+//             class_id: ID.unique(),
+//             class_name: className,
+//             created_by: user.$id,
+//             class_location: [JSON.stringify(locationCoords)],
+//             class_address: [JSON.stringify(address)],
+//             class_schedule: schedule ? [JSON.stringify(schedule)] : [],
+//             class_image: imageUrl,
+//             students: [],
+//             attendance_days: [],
+//             class_size: classSize || 30
+//         };
+
+//         const newClass = await databases.createDocument(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.classCollectionId,
+//             ID.unique(),
+//             classData
+//         );
+
+//         console.log('Class created successfully:', newClass);
+        
+//         // Get current user's session
+//         const currentSession = await account.getSession('current');
+        
+//         // Get all students
+//         const allStudents = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.userCollectionId,
+//             [
+//                 Query.equal('role', 'student')
+//             ]
+//         );
+        
+//         console.log(`Found ${allStudents.documents.length} total students`);
+        
+//         // Filter out current user if they're a student
+//         const studentsToNotify = allStudents.documents.filter(
+//             student => student.accountId !== currentSession.userId
+//         );
+        
+//         console.log(`Sending notifications to ${studentsToNotify.length} students (excluding current user if student)`);
+        
+//         // Log each student who will receive a notification
+//         studentsToNotify.forEach((student, index) => {
+//             console.log(`Student ${index + 1} to notify:`, {
+//                 userId: student.$id,
+//                 username: student.username,
+//                 accountId: student.accountId
+//             });
+//         });
+        
+//         // Send notification to each student
+//         for (const student of studentsToNotify) {
+//             try {
+//                 await Notifications.scheduleNotificationAsync({
+//                     content: {
+//                         title: "New Class Available!",
+//                         body: `A new class "${className}" is now available for enrollment!`,
+//                         data: { classId: classData.class_id }
+//                     },
+//                     trigger: null,
+//                 });
+//                 console.log(`Notification sent to student: ${student.username}`);
+//             } catch (error) {
+//                 console.error(`Failed to send notification to ${student.username}:`, error);
+//             }
+//         }
+        
+//         return newClass;
+
+//     } catch (error) {
+//         console.error('Error in createClass:', error);
+//         throw error;
+//     }
+// };
+
+
+// export const createClass = async (className, location, address, schedule, classSize, imageUrl) => {
+//     try {
+//         console.log('Creating class with name:', className);
+
+//         // Get location coordinates if not provided
+//         const locationCoords = location || await getLocationCoordinates();
+        
+//         const session = await account.getSession('current');
+//         if (!session) throw new Error('Not authenticated');
+
+//         const users = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.userCollectionId,
+//             [
+//                 Query.equal('accountId', session.userId)
+//             ]
+//         );
+
+//         if (!users.documents.length) throw new Error('User not found');
+//         const user = users.documents[0];
+        
+//         console.log('Class creator details:', {
+//             userId: user.$id,
+//             username: user.username,
+//             role: user.role
+//         });
+
+//         // Create properly formatted class data
+//         const classData = {
+//             class_id: ID.unique(),
+//             class_name: className,
+//             created_by: user.$id,
+//             class_location: [JSON.stringify(locationCoords)],
+//             class_address: [JSON.stringify(address)],
+//             class_schedule: schedule ? [JSON.stringify(schedule)] : [],
+//             class_image: imageUrl,
+//             students: [],
+//             attendance_days: [],
+//             class_size: classSize || 30
+//         };
+
+//         const newClass = await databases.createDocument(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.classCollectionId,
+//             ID.unique(),
+//             classData
+//         );
+
+//         console.log('Class created successfully:', newClass);
+        
+//         // Get all students
+//         const allStudents = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.userCollectionId,
+//             [
+//                 Query.equal('role', 'student')
+//             ]
+//         );
+        
+//         console.log(`Found ${allStudents.documents.length} total students`);
+        
+//         // Filter out current user if they're a student
+//         const studentsToNotify = allStudents.documents.filter(
+//             student => student.accountId !== session.userId
+//         );
+        
+//         console.log(`Sending notifications to ${studentsToNotify.length} students (excluding current user if student)`);
+        
+//         // Log each student who will receive a notification
+//         studentsToNotify.forEach((student, index) => {
+//             console.log(`Student ${index + 1} to notify:`, {
+//                 userId: student.$id,
+//                 username: student.username,
+//                 accountId: student.accountId
+//             });
+//         });
+        
+//         // Send notification to each student with their user ID in the data
+//         for (const student of studentsToNotify) {
+//             try {
+//                 await Notifications.scheduleNotificationAsync({
+//                     content: {
+//                         title: "New Class Available!",
+//                         body: `A new class "${className}" is now available for enrollment!`,
+//                         data: { 
+//                             classId: classData.class_id,
+//                             targetUserId: student.$id,  // Add the target user ID
+//                             // notificationType: 'new_class'
+//                         }
+//                     },
+//                     trigger: null,
+//                 });
+//                 console.log(`Notification sent to student: ${student.username} (ID: ${student.$id})`);
+//             } catch (error) {
+//                 console.error(`Failed to send notification to ${student.username}:`, error);
+//             }
+//         }
+        
+//         return newClass;
+
+//     } catch (error) {
+//         console.error('Error in createClass:', error);
+//         throw error;
+//     }
+// };
+
+// export const createClass = async (className, location, address, schedule, classSize, imageUrl) => {
+//     try {
+//         console.log('Creating class with name:', className);
+
+//         const locationCoords = location || await getLocationCoordinates();
+        
+//         const session = await account.getSession('current');
+//         if (!session) throw new Error('Not authenticated');
+
+//         const users = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.userCollectionId,
+//             [Query.equal('accountId', session.userId)]
+//         );
+
+//         if (!users.documents.length) throw new Error('User not found');
+//         const user = users.documents[0];
+
+//         const classData = {
+//             class_id: ID.unique(),
+//             class_name: className,
+//             created_by: user.$id,
+//             class_location: [JSON.stringify(locationCoords)],
+//             class_address: [JSON.stringify(address)],
+//             class_schedule: schedule ? [JSON.stringify(schedule)] : [],
+//             class_image: imageUrl,
+//             students: [],
+//             attendance_days: [],
+//             class_size: classSize || 30
+//         };
+
+//         const newClass = await databases.createDocument(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.classCollectionId,
+//             ID.unique(),
+//             classData
+//         );
+
+//         // Get all students
+//         const students = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.userCollectionId,
+//             [Query.equal('role', 'student')]
+//         );
+
+//         console.log(`Sending notifications to ${students.documents.length} students`);
+
+//         // Send notification to each student
+//         for (const student of students.documents) {
+//             try {
+//                 await Notifications.scheduleNotificationAsync({
+//                     content: {
+//                         title: "New Class Available!",
+//                         body: `A new class "${className}" has been created!`,
+//                         data: {
+//                             type: 'new_class',
+//                             classId: classData.class_id,
+//                             className: className,
+//                             targetUserId: student.accountId, // Use accountId instead of $id
+//                             timestamp: new Date().toISOString()
+//                         }
+//                     },
+//                     trigger: null,
+//                 });
+//                 console.log(`Notification sent to student: ${student.username} (ID: ${student.accountId})`);
+//             } catch (error) {
+//                 console.error(`Failed to send notification to ${student.username}:`, error);
+//             }
+//         }
+        
+//         return newClass;
+
+//     } catch (error) {
+//         console.error('Error in createClass:', error);
+//         throw error;
+//     }
+// };
+
+
+// export const createClass = async (className, location, address, schedule, classSize, imageUrl) => {
+//     try {
+//         console.log('Creating class with name:', className);
+
+//         const locationCoords = location || await getLocationCoordinates();
+        
+//         const session = await account.getSession('current');
+//         if (!session) throw new Error('Not authenticated');
+
+//         const users = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.userCollectionId,
+//             [Query.equal('accountId', session.userId)]
+//         );
+
+//         if (!users.documents.length) throw new Error('User not found');
+//         const user = users.documents[0];
+
+//         const classData = {
+//             class_id: ID.unique(),
+//             class_name: className,
+//             created_by: user.$id,
+//             class_location: [JSON.stringify(locationCoords)],
+//             class_address: [JSON.stringify(address)],
+//             class_schedule: schedule ? [JSON.stringify(schedule)] : [],
+//             class_image: imageUrl,
+//             students: [],
+//             attendance_days: [],
+//             class_size: classSize || 30
+//         };
+
+//         const newClass = await databases.createDocument(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.classCollectionId,
+//             ID.unique(),
+//             classData
+//         );
+
+//         // Get all users (excluding the creator)
+//         const allUsers = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.userCollectionId
+//         );
+
+//         console.log(`Sending notifications to ${allUsers.documents.length - 1} users`);
+
+//         // Send notification to each user (except the creator)
+//         for (const targetUser of allUsers.documents) {
+//             // Skip the creator of the class
+//             if (targetUser.accountId === session.userId) continue;
+
+//             try {
+//                 await Notifications.scheduleNotificationAsync({
+//                     content: {
+//                         title: "New Class Available!",
+//                         body: `A new class "${className}" has been created!`,
+//                         data: {
+//                             type: 'new_class',
+//                             classId: classData.class_id,
+//                             className: className,
+//                             targetUserId: targetUser.accountId,
+//                             timestamp: new Date().toISOString()
+//                         }
+//                     },
+//                     trigger: null,
+//                 });
+//                 console.log(`Notification sent to user: ${targetUser.username} (ID: ${targetUser.accountId})`);
+//             } catch (error) {
+//                 console.error(`Failed to send notification to ${targetUser.username}:`, error);
+//             }
+//         }
+        
+//         return newClass;
+
+//     } catch (error) {
+//         console.error('Error in createClass:', error);
+//         throw error;
+//     }
+// };
+
+// export const createClass = async (className, location, address, schedule, classSize, imageUrl) => {
+//     try {
+//         console.log('\n=== Starting createClass with notifications ===');
+
+//         const locationCoords = location || await getLocationCoordinates();
+        
+//         const session = await account.getSession('current');
+//         if (!session) throw new Error('Not authenticated');
+
+//         const users = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.userCollectionId,
+//             [Query.equal('accountId', session.userId)]
+//         );
+
+//         if (!users.documents.length) throw new Error('User not found');
+//         const user = users.documents[0];
+
+//         const classData = {
+//             class_id: ID.unique(),
+//             class_name: className,
+//             created_by: user.$id,
+//             class_location: [JSON.stringify(locationCoords)],
+//             class_address: [JSON.stringify(address)],
+//             class_schedule: schedule ? [JSON.stringify(schedule)] : [],
+//             class_image: imageUrl,
+//             students: [],
+//             attendance_days: [],
+//             class_size: classSize || 30
+//         };
+
+//         const newClass = await databases.createDocument(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.classCollectionId,
+//             ID.unique(),
+//             classData
+//         );
+
+//         // Get all users (excluding the creator)
+//         const allUsers = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.userCollectionId
+//         );
+
+//         console.log('Found users to notify:', allUsers.documents.map(user => ({
+//             id: user.$id,
+//             accountId: user.accountId,
+//             username: user.username,
+//             role: user.role
+//         })));
+
+//         // Send notification to each user (except the creator)
+//         for (const targetUser of allUsers.documents) {
+//             // Skip the creator of the class
+//             if (targetUser.accountId === session.userId) {
+//                 console.log(`Skipping notification for creator: ${targetUser.username}`);
+//                 continue;
+//             }
+
+//             try {
+//                 console.log(`Preparing notification for ${targetUser.username} (${targetUser.role})`);
+//                 await Notifications.scheduleNotificationAsync({
+//                     content: {
+//                         title: "New Class Available!",
+//                         body: `A new class "${className}" has been created!`,
+//                         data: {
+//                             type: 'new_class',
+//                             classId: classData.class_id,
+//                             className: className,
+//                             targetUserId: targetUser.accountId,
+//                             userRole: targetUser.role,
+//                             timestamp: new Date().toISOString()
+//                         }
+//                     },
+//                     trigger: null,
+//                 });
+//                 console.log(`Successfully sent notification to ${targetUser.username} (${targetUser.role})`);
+//             } catch (error) {
+//                 console.error(`Failed to send notification to ${targetUser.username}:`, error);
+//             }
+//         }
+        
+//         return newClass;
+//     } catch (error) {
+//         console.error('Error in createClass:', error);
+//         throw error;
+//     }
+// };
+
 
 // // Add this helper function for sending new class notifications
 // const sendNewClassNotification = async (classData) => {
@@ -490,6 +905,134 @@ export const createClass = async (className, location, address, schedule, classS
 
 // Get all classes
 ///this work for both teacher and student role, depending on the role of the user, the classes will be fetched
+
+// export const createClass = async (className, location, address, schedule, classSize, imageUrl) => {
+//     try {
+//         // Get location coordinates if not provided
+//         const locationCoords = location || await getLocationCoordinates();
+        
+//         const session = await account.getSession('current');
+//         if (!session) throw new Error('Not authenticated');
+
+//         const users = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.userCollectionId,
+//             [
+//                 Query.equal('accountId', session.userId)
+//             ]
+//         );
+
+//         if (!users.documents.length) throw new Error('User not found');
+//         const user = users.documents[0];
+
+//         // Create properly formatted class data
+//         const classData = {
+//             class_id: ID.unique(),
+//             class_name: className,
+//             created_by: user.$id,
+//             class_location: [JSON.stringify(locationCoords)],
+//             class_address: [JSON.stringify(address)],
+//             class_schedule: schedule ? [JSON.stringify(schedule)] : [],
+//             class_image: imageUrl,
+//             students: [],
+//             attendance_days: [],
+//             class_size: classSize || 30
+//         };
+
+//         const newClass = await databases.createDocument(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.classCollectionId,
+//             ID.unique(),
+//             classData
+//         );
+
+//         console.log('Class created successfully:', newClass);
+        
+//         // Send notifications using our new service
+//         await sendNewClassNotification(classData);
+        
+//         return newClass;
+
+//     } catch (error) {
+//         console.error('Error in createClass:', error);
+//         throw error;
+//     }
+// };
+
+export const createClass = async (className, location, address, schedule, classSize, imageUrl) => {
+    try {
+        // Get location coordinates if not provided
+        const locationCoords = location || await getLocationCoordinates();
+        
+        const session = await account.getSession('current');
+        if (!session) throw new Error('Not authenticated');
+
+        const users = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.userCollectionId,
+            [
+                Query.equal('accountId', session.userId)
+            ]
+        );
+
+        if (!users.documents.length) throw new Error('User not found');
+        const user = users.documents[0];
+
+        // Create properly formatted class data
+        const classData = {
+            class_id: ID.unique(),
+            class_name: className,
+            created_by: user.$id,
+            class_location: [JSON.stringify(locationCoords)],
+            class_address: [JSON.stringify(address)],
+            class_schedule: schedule ? [JSON.stringify(schedule)] : [],
+            class_image: imageUrl,
+            students: [],
+            attendance_days: [],
+            class_size: classSize || 30
+        };
+
+        const newClass = await databases.createDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.classCollectionId,
+            ID.unique(),
+            classData
+        );
+
+        console.log('Class created successfully:', newClass);
+        
+        // Send notifications to ALL users
+        try {
+            console.log('Sending notifications for new class to all users:', classData.class_name);
+            await sendNewClassNotification(classData);
+            console.log('Notifications sent successfully');
+            
+            // // Also trigger a local notification for immediate feedback
+            // await Notifications.scheduleNotificationAsync({
+            //     content: {
+            //         title: "Class Created!",
+            //         body: `Your class "${classData.class_name}" has been created successfully.`,
+            //         data: {
+            //             type: 'class_created',
+            //             classId: classData.class_id
+            //         }
+            //     },
+            //     trigger: null
+            // });
+        } catch (notificationError) {
+            console.error('Error sending notifications:', notificationError);
+            // Continue even if notifications fail - don't fail the class creation
+        }
+        
+        return newClass;
+
+    } catch (error) {
+        console.error('Error in createClass:', error);
+        throw error;
+    }
+};
+
+
 export const getUserClasses = async () => {
     try {
         const session = await account.getSession('current');
@@ -524,7 +1067,7 @@ export const getUserClasses = async () => {
         //     console.log('------------------------');
         // });
             
-            console.log("this is in getuserclasses", classes.documents)
+            // console.log("this is in getuserclasses", classes.documents)
             return classes.documents;
         } else if (user.role === 'student') {
             // For students, get all available classes
@@ -959,6 +1502,7 @@ const getLocationCoordinates = async () => {
 //with push notification
 
 
+//the one being use at the moment (do not delete this)
 export const createClassSession = async (classId: string, sessionTitle: string) => {
     try {
         console.log('\n=== Starting createClassSession ===');
@@ -1547,6 +2091,7 @@ export const findAttendanceSession = async (classId, attendanceCode, studentId, 
 //     }
 // };
 
+//this function has check-in and check-out time
 export const updateAttendanceRecord = async (classDoc, session, studentId, status, isCheckout = false) => {
     try {
         console.log('Updating attendance record:', {

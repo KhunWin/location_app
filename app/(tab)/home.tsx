@@ -6,6 +6,10 @@ import FormField from '@/components/FormField'
 import CustomButton from '@/components/CustomButton'
 import { createClass, getUserClasses, getCurrentUser, enrollInClass, databases, appwriteConfig } from '../../lib/appwrite'
 import { images } from '@/constants'
+import { client } from '@/lib/appwrite';
+import { useFocusEffect } from '@react-navigation/native';
+
+
 
 const Home = () => {
   const [className, setClassName] = useState('')
@@ -15,25 +19,25 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState(null)
   const [enrollmentStatus, setEnrollmentStatus] = useState({})
+  const [lastUpdateTime, setLastUpdateTime] = useState(Date.now());
 
   const screenWidth = Dimensions.get('window').width
   const itemWidth = (screenWidth - 48) / 2
   const { refresh } = useLocalSearchParams();
 
-  useEffect(() => {
-    loadUserAndClasses()
-  // }, [])
-}, [refresh]); // Add refresh to dependency array
 
-  // const handleClassPress = (classItem) => {
-  //   // Navigate to class details page
-  //   router.push({
-  //     // pathname: `/bookmark`,
-  //     pathname: `/myclass`,
-  //     params: { className: classItem.class_name,
-  //                   classId: classItem.class_id}
-  //   });
-  // };
+//   useEffect(() => {
+//     loadUserAndClasses();
+//   // }, [])
+// }, [refresh]); 
+
+    // Replace your existing useEffect with useFocusEffect
+    useFocusEffect(
+      React.useCallback(() => {
+        loadUserAndClasses();
+      }, [])
+    );
+
 
 
   const handleClassPress = (classItem) => {
@@ -68,6 +72,7 @@ const Home = () => {
       }
     });
   };
+
 
 const loadUserAndClasses = async () => {
   try {
@@ -133,7 +138,7 @@ const handleCreateClass = async () => {
     console.log('Creating class with name:', className);
     
     const newClass = await createClass(className);
-    console.log('Class created:', newClass);
+    // console.log('Class created:', newClass);
     
     setClassName('');
     setShowForm(false);

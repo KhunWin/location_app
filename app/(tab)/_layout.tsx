@@ -85,6 +85,7 @@ import React, { useState, useEffect } from 'react'
 import { Tabs, Redirect } from 'expo-router';
 import { icons } from '../../constants';
 import { getCurrentUser } from '../../lib/appwrite';
+import { router } from 'expo-router';
 
 const TabIcon = ({icon, color, name, focused}) => {
   return (
@@ -105,6 +106,8 @@ const TabIcon = ({icon, color, name, focused}) => {
 const TabsLayout = () => {
   const [userRole, setUserRole] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [tabRefreshKey, setTabRefreshKey] = useState(0); // Add this state
+
 
 
   useEffect(() => {
@@ -151,14 +154,37 @@ const TabsLayout = () => {
       )}}/>
 
       {/* name = "bookmark", it used to be bookmark*/}
-      <Tabs.Screen name="home" options={{title: 'Bookmark', headerShown: false, tabBarIcon: ({color, focused}) => (
+      {/* <Tabs.Screen name="home" options={{title: 'Bookmark', headerShown: false, tabBarIcon: ({color, focused}) => (
           <TabIcon 
             icon={userRole === 'student' ? icons.checkin : icons.bookmark}
             color={color}
             name={userRole === 'student' ? "AllClass" : "MyClass"}
             focused={focused}
           />
-      )}}/>
+      )}}/> */}
+
+      <Tabs.Screen 
+              name="home" 
+              options={{
+                title: 'Bookmark', 
+                headerShown: false, 
+                tabBarIcon: ({color, focused}) => (
+                  <TabIcon 
+                    icon={userRole === 'student' ? icons.checkin : icons.bookmark}
+                    color={color}
+                    name={userRole === 'student' ? "AllClass" : "MyClass"}
+                    focused={focused}
+                  />
+                ),
+                listeners: {
+                  tabPress: () => {
+                    // Force refresh when tab is pressed
+                    setTabRefreshKey(prev => prev + 1);
+                  }
+                }
+              }}
+            />
+      
 
       <Tabs.Screen name="create" options={{title: 'Create', headerShown: false, tabBarIcon: ({color, focused}) => (
           <TabIcon 

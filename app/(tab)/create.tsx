@@ -87,7 +87,7 @@ const Create = () => {
       setIsLoading(true);
       
       const user = await getCurrentUser();
-      console.log('Current user data:', user);
+      // console.log('Current user data:', user);
       setCurrentUser(user);
   
       if (user.role === 'student') {
@@ -107,7 +107,7 @@ const Create = () => {
         console.log('All joined classes after parsing:', joinedClasses);
         
         const allClasses = await getUserClasses();
-        console.log('All classes from database:', allClasses);
+        // console.log('All classes from database:', allClasses);
   
         const approvedClasses = allClasses.filter(cls => {
           const isApproved = joinedClasses.some(joined => 
