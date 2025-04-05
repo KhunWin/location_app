@@ -3,6 +3,8 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { databases, account } from '../lib/appwrite';
 import { appwriteConfig } from '@/lib/appwrite';
+// import { appwriteConfig } from '../lib/config'; // Updated import
+
 import { ID, Query } from 'react-native-appwrite';
 
 // // Configure notifications

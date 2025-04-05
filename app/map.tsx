@@ -105,7 +105,7 @@ const Map = () => {
                   longitude: classItem.parsedLocation.longitude,
                 }}
                 title={classItem.class_name}
-                description={`Class ID: ${classItem.class_id}`}
+                // description={`Class ID: ${classItem.class_id}`}
               />
             )
           ))}

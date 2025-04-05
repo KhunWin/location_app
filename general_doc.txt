@@ -18,6 +18,7 @@ This collection stores information about all users (students and teachers). Sinc
   "_id": "<unique_user_id>",
   "username": "john_doe",
   "email": "johndoe@example.com",
+  "acccountId": "
   "role": "student",        // Can be "student" or "teacher"
   "joined_classes": [       // Only applicable for students
     {
@@ -30,13 +31,6 @@ This collection stores information about all users (students and teachers). Sinc
   ]
 }
 ```
-
-#### **Notes:**
-- `role`: Differentiates between students and teachers.
-- `joined_classes`: Tracks the classes a student has joined or requested to join.
-- `created_classes`: Tracks the classes a teacher has created.
-
----
 
 ### **2. `classes` Collection**
 This collection stores all the class-related information, including the teacher who created it, the students who joined, and the attendance records.
@@ -84,10 +78,14 @@ classCollectionId
         }
       ]
     }
-  ]
+  ],
+  "class_size": 20, //integer
+  "class_image": "url" //url from storage
+
 }
 
-filecollectionId
+3. filecollection
+**Document Structure**
 {
 
   "Document ID" : "_id",
@@ -96,6 +94,7 @@ filecollectionId
   "class_id" : "67ae43b0001a50feec61",
   "fileURL" : "https://cloud.appwrite.io/v1/storage/buckets/67330bfe001b740c30af/files/67ae2e490006f1d213df/view?project=673308040024ad5f0292"
 }
+
 ```
 
 #### **Notes:**
@@ -266,5 +265,9 @@ have to enter the code. easier to check-in.
 ## add get direction to specific location 
 ## add get duration to the class location 
 ## let the user upload the image for their class. 
+
+##update location pin color:
+##add charts pie, bar 
+## sending short note to teacher only if they are in the classroom. 
 
 
