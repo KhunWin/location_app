@@ -104,11 +104,11 @@ const Fileupload = () => {
         isLoading={isUploading}
       />
 
-      <CustomButton
+      {/* <CustomButton
         title="View Files"
         handlePress={handleViewFiles}
         containerStyle="mt-4"
-      />
+      /> */}
 
       <TouchableOpacity
         onPress={() => router.back()}

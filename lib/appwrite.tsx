@@ -2505,7 +2505,52 @@ export const listFiles = async (classId: string) => {
 
         // Create query to filter files by exact class_id
         const queries = [
-            Query.equal('class_id', classId)
+            Query.equal('class_id', classId),
+            // Query.notEqual('is_classimage', 'Yes')
+
+        ];
+
+        // Get files with the query filter
+        const files = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.fileCollectionId,
+            queries
+        );
+
+        // console.log('Files query result:', files);
+
+        return files.documents;
+    } catch (error) {
+        console.error('Error listing files:', error);
+        throw error;
+    }
+};
+
+export const listFiles_count = async (classId: string) => {
+    try {
+        // Get current user to check role
+        const currentUser = await getCurrentUser();
+        console.log('Checking files for classId:', classId);
+        
+        // For students, verify enrollment first
+        if (currentUser.role === 'student') {
+            const joinedClasses = parseJoinedClasses(currentUser.joined_classes);
+            console.log('Student joined classes:', joinedClasses);
+            
+            // Find the matching class using exact class ID
+            const enrollment = joinedClasses.find(cls => cls.class_id === classId);
+            
+            if (!enrollment || enrollment.status !== 'approved') {
+                console.log('Student not approved for this class');
+                return [];
+            }
+        }
+
+        // Create query to filter files by exact class_id
+        const queries = [
+            Query.equal('class_id', classId),
+            Query.notEqual('is_classimage', 'Yes')
+
         ];
 
         // Get files with the query filter
@@ -2734,7 +2779,7 @@ export const getClassAddress = async (classId) => {
 };
 
 //updating class details for teacher
-export const updateClassDetails = async (classId, newAddress, newSchedule, newClassSize, imageUrl) => {
+export const updateClassDetails = async (classId, name, newAddress, newSchedule, newClassSize, imageUrl) => {
     try {
         const classDocuments = await databases.listDocuments(
             appwriteConfig.databaseId,
@@ -2749,6 +2794,7 @@ export const updateClassDetails = async (classId, newAddress, newSchedule, newCl
         const classDoc = classDocuments.documents[0];
         
         const updates = {
+            class_name: name,
             class_address: [JSON.stringify(newAddress)],
             class_schedule: [JSON.stringify(newSchedule)],
             class_size: newClassSize

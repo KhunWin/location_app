@@ -76,7 +76,7 @@ const EditClassDetails = () => {
             setIsSubmitting(true);
             // Convert size to integer
             const sizeInt = parseInt(size) || 0;
-            await updateClassDetails(classId, address, schedule, sizeInt, image);
+            await updateClassDetails(classId, name, address, schedule, sizeInt, image);
             Alert.alert('Success', 'Class details updated successfully');
             router.back({
                 params: {

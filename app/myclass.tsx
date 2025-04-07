@@ -351,8 +351,18 @@ const MyClass = () => {
                 isCheckout // Add isCheckout parameter
             );
 
+            // Alert.alert(
+            //     'Success',
+            //     isCheckout ? 
+            //         'Successfully checked out' : 
+            //         `Attendance marked as ${result.status}` +
+            //         (result.status === 'absent' ? 
+            //             ` (${Math.round(result.distance)}m from class location)` : 
+            //             '')
+            // );
             Alert.alert(
-                'Success',
+                isCheckout ? 'Success' : 
+                    (result.status === 'absent' ? 'Unsuccessful' : 'Success'),
                 isCheckout ? 
                     'Successfully checked out' : 
                     `Attendance marked as ${result.status}` +
