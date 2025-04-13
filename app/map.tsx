@@ -5,6 +5,7 @@ import MapView, { Marker, Circle } from 'react-native-maps';
 import Slider from '@react-native-community/slider';
 import { getUserClasses } from '../lib/appwrite';
 import { Stack } from 'expo-router';
+import { getCurrentUser } from '../lib/appwrite';
 
 const Map = () => {
   const [region, setRegion] = useState({
@@ -15,48 +16,128 @@ const Map = () => {
   });
   const [radius, setRadius] = useState(2000); // 2km in meters
   const [classes, setClasses] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // useEffect(() => {
+  //   loadClasses();
+  // }, []);
+
+ 
+
+  // const loadClasses = async () => {
+  //   try {
+  //     const allClasses = await getUserClasses();
+  //     console.log('Retrieved classes:', allClasses);
+  
+  //     // Process classes to extract locations
+  //     const classesWithLocations = allClasses.map(classItem => {
+  //       let location = null;
+  //       if (classItem.class_location && classItem.class_location[0]) {
+  //         try {
+  //           location = JSON.parse(classItem.class_location[0]);
+  //           // console.log(`Parsed location for class ${classItem.class_name}:`, location);
+  //           // console.log('class status:', classItem);
+
+           
+
+  //         } catch (error) {
+  //           console.error(`Error parsing location for class ${classItem.class_name}:`, error);
+  //         }
+  //       }
+  //       return {
+  //         ...classItem,
+  //         parsedLocation: location
+  //       };
+  //     });
+  
+  //     console.log('Processed classes with locations:', classesWithLocations);
+  //     setClasses(classesWithLocations);
+  
+  //     // If there are classes with locations, center the map on the first one
+  //     const firstClassWithLocation = classesWithLocations.find(c => c.parsedLocation);
+  //     if (firstClassWithLocation?.parsedLocation) {
+  //       setRegion({
+  //         latitude: firstClassWithLocation.parsedLocation.latitude,
+  //         longitude: firstClassWithLocation.parsedLocation.longitude,
+  //         latitudeDelta: 0.0922,
+  //         longitudeDelta: 0.0421,
+  //       });
+  //     }
+  //   } catch (error) {
+  //     console.error('Error loading classes:', error);
+  //   }
+  // };
+
 
   useEffect(() => {
-    loadClasses();
+    loadAllClassesWithEnrollmentStatus();
   }, []);
 
-  const loadClasses = async () => {
+  const loadAllClassesWithEnrollmentStatus = async () => {
     try {
+      setIsLoading(true);
+      
+      const user = await getCurrentUser();
+      setCurrentUser(user);
+      
+      // Get all classes first
       const allClasses = await getUserClasses();
-      console.log('Retrieved classes:', allClasses);
-  
-      // Process classes to extract locations
-      const classesWithLocations = allClasses.map(classItem => {
-        let location = null;
-        if (classItem.class_location && classItem.class_location[0]) {
+      
+      if (user.role === 'student') {
+        // Parse student's enrolled classes
+        const joinedClasses = user.joined_classes.map(classStr => {
           try {
-            location = JSON.parse(classItem.class_location[0]);
-            console.log(`Parsed location for class ${classItem.class_name}:`, location);
-          } catch (error) {
-            console.error(`Error parsing location for class ${classItem.class_name}:`, error);
+            return JSON.parse(classStr);
+          } catch (e) {
+            console.error('Error parsing class:', e);
+            return null;
           }
-        }
-        return {
-          ...classItem,
-          parsedLocation: location
-        };
-      });
-  
-      console.log('Processed classes with locations:', classesWithLocations);
-      setClasses(classesWithLocations);
-  
-      // If there are classes with locations, center the map on the first one
-      const firstClassWithLocation = classesWithLocations.find(c => c.parsedLocation);
-      if (firstClassWithLocation?.parsedLocation) {
-        setRegion({
-          latitude: firstClassWithLocation.parsedLocation.latitude,
-          longitude: firstClassWithLocation.parsedLocation.longitude,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
+        }).filter(Boolean);
+        
+        // Process all classes and mark enrolled ones
+        const classesWithLocations = allClasses.map(classItem => {
+          const isEnrolled = joinedClasses.some(joined => 
+            joined.class_id === classItem.class_id && 
+            joined.status === 'approved'
+          );
+          
+          return {
+            ...classItem,
+            parsedLocation: classItem.class_location?.[0] ? 
+              JSON.parse(classItem.class_location[0]) : null,
+            isEnrolled
+          };
         });
+
+        setClasses(classesWithLocations);
+        
+        // Center map on first class location if available
+        const firstLocation = classesWithLocations.find(c => c.parsedLocation);
+        if (firstLocation?.parsedLocation) {
+          setRegion({
+            latitude: firstLocation.parsedLocation.latitude,
+            longitude: firstLocation.parsedLocation.longitude,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421,
+          });
+        }
+      } else {
+        // For non-students, just show all classes
+        const classesWithLocations = allClasses.map(classItem => ({
+          ...classItem,
+          parsedLocation: classItem.class_location?.[0] ? 
+            JSON.parse(classItem.class_location[0]) : null,
+          isEnrolled: false
+        }));
+        
+        setClasses(classesWithLocations);
       }
     } catch (error) {
       console.error('Error loading classes:', error);
+      Alert.alert('Error', 'Failed to load classes');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -106,6 +187,7 @@ const Map = () => {
                 }}
                 title={classItem.class_name}
                 // description={`Class ID: ${classItem.class_id}`}
+                pinColor={classItem.isEnrolled ? '#007AFF' : '#FF3B30'}
               />
             )
           ))}

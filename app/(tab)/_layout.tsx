@@ -176,10 +176,23 @@ const TabsLayout = () => {
                     focused={focused}
                   />
                 ),
+                // listeners: {
+                //   tabPress: () => {
+                //     // Force refresh when tab is pressed
+                //     setTabRefreshKey(prev => prev + 1);
+                //   }
+                // }
+
                 listeners: {
-                  tabPress: () => {
-                    // Force refresh when tab is pressed
-                    setTabRefreshKey(prev => prev + 1);
+                  tabPress: (e) => {
+                    // Prevent default navigation
+                    e.preventDefault();
+                    
+                    // Force a refresh by navigating explicitly
+                    router.push({
+                      pathname: '/(tab)/home',
+                      params: { refresh: Date.now() }
+                    });
                   }
                 }
               }}

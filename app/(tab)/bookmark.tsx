@@ -1,10 +1,12 @@
 
 import { View, Text, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
-import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+// import { router } from 'expo-router';
+// import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getUserClasses, getCurrentUser, listFiles_count } from '@/lib/appwrite';
+import { getUserClasses, getCurrentUser, listFiles} from '@/lib/appwrite';
 import { BarChart } from 'react-native-chart-kit';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useEffect, useState, useCallback } from 'react';
 
 const Bookmark = () => {
   const [classStats, setClassStats] = useState({
@@ -16,9 +18,17 @@ const Bookmark = () => {
   const [isLoading, setIsLoading] = useState(true);
   const screenWidth = Dimensions.get('window').width;
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
+  // useEffect(() => {
+  //   loadDashboardData();
+  // }, []);
+
+  // Add refresh mechanism
+  useFocusEffect(
+    useCallback(() => {
+      loadDashboardData();
+      return () => {};
+    }, [])
+  );
 
   // Add userRole to the component state
   const [userRole, setUserRole] = useState(null);
@@ -38,7 +48,7 @@ const Bookmark = () => {
         // Process each class
         for (const classItem of classes) {
           const studentCount = classItem.students ? classItem.students.length : 0;
-          const files = await listFiles_count(classItem.class_id);
+          const files = await listFiles(classItem.class_id);
           const fileCount = files.length;
 
           totalStudents += studentCount;
