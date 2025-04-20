@@ -9,8 +9,8 @@ import { getCurrentUser } from '../lib/appwrite';
 
 const Map = () => {
   const [region, setRegion] = useState({
-    latitude: 37.78825,  // Default coordinates (you should set this to your default location)
-    longitude: -122.4324,
+    latitude: 22.33657,  // Default coordinates (you should set this to your default location)
+    longitude: 114.18270,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
